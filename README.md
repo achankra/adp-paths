@@ -49,7 +49,7 @@ Every tool in the L01 deterministic layer is real -- not simulated. The linter r
 |------------|---------|-------------|-------|
 | **Python** | 3.11+ | Runtime. `asyncio` for async pipeline execution, `ast` for code analysis, `importlib.util` for dynamic module loading, `secrets` for ID generation. | All |
 | **Ruff** | 0.4+ | L01 linter and formatter. Called via `subprocess` -- same binary your CI pipeline runs. Rules: E, W, F, I, S, B, SIM, UP. Also used as the deterministic gate in `/validate-change`. | L01 |
-| **pytest** | 8.0+ | Test framework. 53 tests covering tools, layers, HARNESS, GOVERNANCE, and all three paths at both maturity levels. `pytest-asyncio` for async test support. | Testing |
+| **pytest** | 8.0+ | Test framework. 92 tests covering tools, layers, HARNESS, GOVERNANCE, observability, metrics server, and all four paths at both maturity levels. `pytest-asyncio` for async test support. | Testing |
 | **anthropic** | 0.39+ | *(Optional)* Claude API SDK for `--live` mode. Provides model-backed PR review and fix generation. Not required -- `--simulate` mode uses local heuristics with zero external calls. | L03 |
 | **ast** | stdlib | Build verification. Parses source files to extract public exports and detect syntax errors. The "can it compile?" gate. | L01 |
 | **re** | stdlib | Security scanning. Pattern-based detection of `eval()`, `exec()`, `shell=True`, hardcoded secrets, `os.system()`, `pickle.loads()`, and other anti-patterns. | L01 |
@@ -169,6 +169,17 @@ The codebase includes a full L01 observability infrastructure (`src/observabilit
 
 GOVERNANCE.Observability (L03) emits to this L01 infrastructure when an ObservabilityStack is provided, bridging agent-level events to the same telemetry fabric that pipelines use.
 
+### Live Metrics Server
+
+Run with `--serve-metrics` to start an HTTP server that exposes a Prometheus-compatible `/metrics` endpoint:
+
+```bash
+python -m src.cli --simulate --serve-metrics
+python -m src.cli --simulate --serve-metrics --metrics-port 9090
+```
+
+The server runs in a background thread. After all demos complete, it stays alive for Prometheus scraping until you press Ctrl+C.
+
 ### Exporting Telemetry
 
 ```bash
@@ -221,6 +232,7 @@ adp_paths/
 │   ├── harness.py              # HARNESS: Context, Capability, Execution, Evaluation
 │   ├── governance.py           # GOVERNANCE: Identity, Security, Observability
 │   ├── observability.py        # L01 observability: traces, metrics, structured logs
+│   ├── metrics_server.py       # HTTP metrics server (Prometheus /metrics endpoint)
 │   └── paths/
 │       ├── __init__.py
 │       ├── ci_build.py         # Deterministic — stays on L01
@@ -232,6 +244,11 @@ adp_paths/
 │       ├── __init__.py
 │       ├── handler.py          # Platform API handler (the code pipelines operate on)
 │       └── utils.py            # Platform utilities (validation, formatting, sanitization)
+├── docs/
+│   ├── ci-build.mermaid        # Sequence diagram — /ci-build path
+│   ├── pr-review.mermaid       # Sequence diagram — /pr-review path
+│   ├── validate-change.mermaid # Sequence diagram — /validate-change path
+│   └── dispatch-work.mermaid   # Sequence diagram — /dispatch-work path
 ├── grafana/
 │   ├── docker-compose.yml      # Grafana + Prometheus stack
 │   ├── prometheus.yml          # Prometheus scrape config
@@ -241,11 +258,12 @@ adp_paths/
 │   └── provisioning/           # Auto-provisioned datasources and dashboard config
 └── tests/
     ├── __init__.py
-    ├── test_tools.py           # 12 tests — lint, test runner, build, security scan
-    ├── test_governance.py      # 12 tests — identity, security policies, observability, wrap
-    ├── test_harness.py         # 13 tests — context, capability, execution, evaluation, flow
-    ├── test_observability.py   # 26 tests — spans, tracer, metrics, logger, stack
-    └── test_paths.py           # 24 tests — ci-build, pr-review, validate-change, dispatch-work
+    ├── test_tools.py           # 14 tests — lint, test runner, build, security scan
+    ├── test_governance.py      # 13 tests — identity, security policies, observability, wrap
+    ├── test_harness.py         # 15 tests — context, capability, execution, evaluation, flow
+    ├── test_observability.py   # 27 tests — spans, tracer, metrics, logger, stack
+    ├── test_metrics_server.py  # 6 tests — HTTP server, /metrics endpoint, lifecycle
+    └── test_paths.py           # 23 tests — ci-build, pr-review, validate-change, dispatch-work
 ```
 
 ---
@@ -253,7 +271,7 @@ adp_paths/
 ## Running Tests
 
 ```bash
-# Run all 87 tests
+# Run all 92 tests
 pytest
 
 # Run with verbose output
@@ -264,6 +282,7 @@ pytest tests/test_tools.py
 pytest tests/test_harness.py
 pytest tests/test_governance.py
 pytest tests/test_paths.py
+pytest tests/test_metrics_server.py
 ```
 
 ---
@@ -326,6 +345,7 @@ Every module in the codebase includes PEH chapter references in its docstring an
 | `harness.py` | Ch 14 | `ch14/harness.py` |
 | `governance.py` | Ch 3, 4, 11, 14 | `ch03/identity.py`, `ch14/governance.py` |
 | `observability.py` | Ch 4, 14 | `ch04/observability.py`, `ch04/tracer.py` |
+| `metrics_server.py` | Ch 4 | `ch04/metrics_server.py` |
 | `paths/ci_build.py` | Ch 8 | `ch08/ci_build.py` |
 | `paths/pr_review.py` | Ch 14 | `ch14/pr_review.py` |
 | `paths/validate_change.py` | Ch 4, 11, 13 | `ch04/observability.py`, `ch13/feedback_loop.py` |
