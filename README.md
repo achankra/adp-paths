@@ -318,6 +318,41 @@ Ruff configuration is in `ruff.toml`. Target version is Python 3.11, line length
 
 ---
 
+## GOVERNANCE Component Mapping
+
+Every agent-driven path wraps execution with GOVERNANCE. The three sub-layers — Identity, Security, Observability — are implemented in `governance.py` and used by each path as follows:
+
+| Component | Class | What It Does | Paths That Use It |
+|-----------|-------|-------------|-------------------|
+| Identity | `GovernanceIdentity` | `register()` + `verify()` — agent must be registered before execution | /pr-review, /validate-change, /dispatch-work |
+| Security | `GovernanceSecurity` | `add_policy()` + `enforce()` — policy functions checked before every action | /pr-review (repo-scope, no-merge), /validate-change (retry-limit), /dispatch-work (capability-scope) |
+| Observability | `GovernanceObservability` | `record()` + audit trail + metrics + L01 bridge via ObservabilityStack | /pr-review, /validate-change, /dispatch-work |
+
+`Governance.wrap()` orchestrates the sequence: verify identity → enforce policies → execute → record. If identity verification fails or any policy denies, the wrapped function never runs.
+
+Deterministic paths (`/ci-build`) do not use GOVERNANCE — the pipeline does not know or care who wrote the code.
+
+---
+
+## HARNESS Component Mapping
+
+Agent-driven paths that require probabilistic reasoning use HARNESS to orchestrate the agent's execution. The four components — Context, Capability, Execution, Evaluation — are implemented in `harness.py`:
+
+| Component | Class | What It Does | Paths That Use It |
+|-----------|-------|-------------|-------------------|
+| Context | `HarnessContext` | Reads real files via `Path.read_text()`, loads failure signals, gathers change metadata | /pr-review (source files, ADRs), /validate-change (failure signals + source) |
+| Capability | `HarnessCapability` | Selects model + strategy based on change type (routine → standard, security-sensitive → deep-scan) | /pr-review, /validate-change |
+| Execution | `HarnessExecution` | Simulate: real AST analysis + pattern matching. Live: Claude API with structured prompts | /pr-review (generate-review), /validate-change (generate-fix) |
+| Evaluation | `HarnessEvaluation` | Assesses result quality → auto-approved / request-changes / pending-human-review | /pr-review (always pending-human-review at L2) |
+
+`Harness.run()` chains all four in sequence: Context → Capability → Execution → Evaluation.
+
+`/dispatch-work` uses HARNESS-like capability matching inline (the `_match_agent` function) rather than the full `Harness.run()` orchestrator, because dispatch is about routing work, not generating content.
+
+Deterministic paths (`/ci-build`) do not use HARNESS — there is no probabilistic reasoning involved.
+
+---
+
 ## PEH Chapter Mapping
 
 For the L01 foundation -- Kubernetes runtime, GitOps, CI/CD pipelines, observability, policy-as-code -- see *The Platform Engineer's Handbook* and the companion repository at [github.com/achankra/peh](https://github.com/achankra/peh). The following chapters map directly to ADP layers:
