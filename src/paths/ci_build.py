@@ -8,11 +8,6 @@ At L0-L1: Developer pushes code, pipeline runs lint/test/build/security.
 At L2:    Agents may produce the code, but the pipeline is unchanged.
           It stays on L01. No L02 path definitions. No L03 agent infra.
 
-    "Deterministic paths are the hard gates that agent-driven paths
-     submit to — probabilistic and hybrid alike. Never the other way
-     around."
-    — From IDP to ADP (Weave Intelligence, 2025)
-
 This implementation uses REAL tools:
     - Ruff for linting (subprocess, same as CI would run it)
     - ast.parse + importlib for build verification
@@ -52,9 +47,6 @@ def create_default_stages(input_data: dict) -> list[dict]:
     Each stage calls the actual Ruff linter, ast.parse, or
     security scanner — not a simulation.
 
-    PEH Ch.8: "Pipeline stages are composable. Each stage is
-    a function: input → result. The pipeline is the sequence."
-    Companion: github.com/achankra/peh, ch08/stages.py
     """
     target_files = _default_target_files(input_data)
 
@@ -100,8 +92,6 @@ def _make_lint_stage(target_files):
 def _make_test_stage(target_files):
     async def run(_input):
         # Find handler module in target files
-        # PEH Ch.5: "Evaluate the User Experience" — the handler is the
-        # platform service endpoint under test
         handler_path = next(
             (f for f in target_files if "handler" in f), target_files[0]
         )
@@ -196,9 +186,6 @@ async def run_at_l01(input_data: dict) -> dict:
     The developer pushes code, the pipeline runs real tools.
     If it fails, the developer reads output and fixes manually.
 
-    PEH Ch.8: "At L0 and L1, the human is the loop. The pipeline
-    is the same — it just reports to a human instead of an agent."
-    Companion: github.com/achankra/peh, ch08/ci_build_l01.py
     """
     tooling = L01Tooling()
     stages = create_default_stages(input_data)
@@ -230,9 +217,6 @@ async def run_at_l02(input_data: dict) -> dict:
     The pipeline is identical. Agents may have authored the code,
     but the pipeline does not know or care.
 
-    PEH Ch.8: "At L2, the pipeline is unchanged. The code source
-    changes — human to agent — but the gate does not."
-    Companion: github.com/achankra/peh, ch08/ci_build_l02.py
     """
     tooling = L01Tooling()
     stages = create_default_stages(input_data)

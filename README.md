@@ -179,12 +179,25 @@ This writes four files: `traces.json`, `metrics.json`, `logs.json`, and `prometh
 
 ### Grafana Dashboard
 
-A pre-configured Grafana + Prometheus stack is provided in `grafana/`:
+A pre-configured Grafana + Prometheus stack is provided in `grafana/`. Two options:
+
+**Homebrew (macOS, no Docker required):**
+
+```bash
+brew install grafana prometheus
+prometheus --config.file=grafana/prometheus.yml &
+brew services start grafana
+# Open http://localhost:3000 (admin/admin)
+# Add Prometheus data source (http://localhost:9090)
+# Import grafana/dashboards/adp-dashboard.json
+```
+
+**Docker Compose:**
 
 ```bash
 cd grafana
-docker-compose up -d
-# Open http://localhost:3000 (admin/admin)
+docker compose up -d
+# Open http://localhost:3000 (admin/admin) — dashboard auto-provisioned
 ```
 
 The dashboard has three sections mapped to the three-layer architecture: L01 Pipeline Telemetry, L02 Dispatch Work, and L03 GOVERNANCE Events. See `grafana/README.md` for details.

@@ -133,9 +133,6 @@ async def demo_ci_build(args):
     label("GOVERNANCE", "None — deterministic path")
     print_summary(l02["summary"])
 
-    print(f"\n  {GREEN}{BOLD}Key insight:{RESET} The pipeline is identical at L0-L1 and L2.")
-    print("  Deterministic paths stay on L01. The IDP layer constrains agents.")
-
 
 async def demo_pr_review(args):
     header("/pr-review — Probabilistic Path (at L2)")
@@ -212,9 +209,6 @@ async def demo_pr_review(args):
 
     print_summary(l02["summary"])
 
-    print(f"\n  {GREEN}{BOLD}Key insight:{RESET} At L2, the agent reviews with context and evidence.")
-    print("  The human validates — the agent does not merge.")
-
 
 async def demo_validate_change(args):
     header("/validate-change — Hybrid Path (at L2)")
@@ -265,9 +259,6 @@ async def demo_validate_change(args):
         label("  Events recorded", str(l02["governance"]["observability"]["total_executions"]))
         label("  Audit trail", f"{len(l02['governance']['audit_trail'])} entries")
     print_summary(l02["summary"])
-
-    print(f"\n  {GREEN}{BOLD}Key insight:{RESET} The deterministic gate never changes.")
-    print("  The agent retries until passing — with a limit and human escalation.")
 
 
 async def demo_dispatch_work(args):
@@ -345,9 +336,6 @@ async def demo_dispatch_work(args):
 
     label("Duration", f"{l02['duration_ms']}ms")
     print_summary(l02["summary"])
-
-    print(f"\n  {GREEN}{BOLD}Key insight:{RESET} At L2, Dispatch Work is a new path.")
-    print("  Work is assigned to agents by capability — not picked up by humans.")
 
 
 # ── Main ─────────────────────────────────────────────────────────
@@ -434,11 +422,7 @@ def main():
 
     asyncio.run(run())
 
-    # Footer
-    print(f"\n{DIM}{'─' * 68}{RESET}")
-    print(f'{DIM}  "An IDP standardizes paths for humans;')
-    print(f'   an ADP makes those paths executable by agents at scale."{RESET}')
-    print(f"{DIM}  — From IDP to ADP, Weave Intelligence{RESET}\n")
+    print()
 
 
 if __name__ == "__main__":

@@ -1,9 +1,6 @@
 """
 /validate-change — Hybrid Path (at L2)
 
-    "The most underestimated shift in the L0/L1 to L2 transition."
-    — From IDP to ADP (Weave Intelligence, 2025)
-
 At L0-L1: Single human-walked gate. Developer reads CI output,
           fixes manually, pushes again. No feedback loop.
 At L2:    Agent + deterministic gate running in a loop.
@@ -50,8 +47,6 @@ def create_validation_stages(target_files: list[str]) -> list[dict]:
 
     The gate is always deterministic: same file, same rules, same result.
 
-    PEH Ch.8: "The pipeline is the arbiter. It does not negotiate."
-    Companion: github.com/achankra/peh, ch08/validation_stages.py
     """
     return [
         {
@@ -126,10 +121,6 @@ async def run_at_l01(change: dict) -> dict:
     Developer pushes code. CI runs real Ruff. Developer reads output.
     If it fails, they fix manually and push again.
 
-    PEH Ch.13: "At L0, the feedback loop is the developer. They
-    read the output, interpret it, fix the code, and push again.
-    The cycle time is hours, not seconds."
-    Companion: github.com/achankra/peh, ch13/validate_l01.py
     """
     target_files = change.get("file_paths") or [
         str(SAMPLE_DIR / "handler.py"),
@@ -172,11 +163,6 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
     In simulate mode: Ruff --fix generates the fixes (deterministic auto-fix).
     In live mode: Claude API generates fixes from failure signals.
 
-    PEH Ch.13: "At L2, the feedback loop is the agent. It reads
-    structured failure signals — not raw logs — interprets them,
-    generates a fix, and resubmits to the same deterministic gate.
-    The gate does not change. The agent adapts."
-    Companion: github.com/achankra/peh, ch13/validate_l02.py
     """
     options = options or {}
     max_retries = options.get("max_retries", 3)
@@ -187,8 +173,6 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
     governance = Governance()
 
     # Copy target files to a temp directory so we can modify them in the loop
-    # PEH Ch.13: "The agent works on a copy. The original is untouched
-    # until the gate passes."
     source_files = change.get("file_paths") or [
         str(SAMPLE_DIR / "handler.py"),
         str(SAMPLE_DIR / "utils.py"),
@@ -201,7 +185,6 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
         target_files.append(dest)
 
     # Register agent identity
-    # PEH Ch.3: "Identity is the first gate."
     agent_id = options.get("agent_id", "validate-agent-001")
     governance.identity.register(agent_id, {
         "team": change.get("team", "platform"),
@@ -240,10 +223,7 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
             }
             break
 
-        # Collect structured failure signals from the real pipeline
-        # PEH Ch.4: "Structured signals, not raw logs. The agent
-        # needs machine-readable failure data, not human-readable
-        # console output."
+        # Collect structured failure signals from the pipeline
         failed_stages = [
             {
                 "name": s["name"],
@@ -339,8 +319,6 @@ async def _generate_fix(harness, target_files, lint_errors, failed_stages, simul
     """Generate a fix using either Ruff --fix (simulate) or Claude (live)."""
     if simulate:
         # Use Ruff --fix directly — deterministic auto-fix
-        # PEH Ch.13: "In simulate mode, the fix is deterministic.
-        # Ruff applies its own auto-fixes. No model involved."
         fix_result = tools.lint(target_files, fix=True)
         return {
             "harness": True,

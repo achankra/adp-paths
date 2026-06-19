@@ -9,9 +9,6 @@ Three components that control how the agent operates:
 GOVERNANCE is mandatory for all agent-driven paths.
 Every HARNESS execution is wrapped by GOVERNANCE.
 
-    "Without governance, agent autonomy is just agent chaos."
-    — The Platform Engineer's Handbook, Chapter 14
-
 PEH Reference:
     Chapter 3  — Securing Platform Access (RBAC, identity, OPA)
     Chapter 4  — Embedding Observability (telemetry, tracing)
@@ -38,9 +35,6 @@ class GovernanceIdentity:
     Every agent that touches a platform path must be registered
     and verified before execution. No anonymous agents.
 
-    PEH Ch.3: "Identity is the first gate. If you cannot prove
-    who you are, you cannot act."
-    Companion: github.com/achankra/peh, ch03/identity.py
     """
 
     def __init__(self):
@@ -58,8 +52,6 @@ class GovernanceIdentity:
         """
         Verify an agent's identity before execution.
 
-        PEH Ch.3: "Verification is not optional. Even internal
-        agents go through the same RBAC gates as external ones."
         """
         agent = self.registered_agents.get(agent_id)
         if agent is None:
@@ -80,9 +72,6 @@ class GovernanceSecurity:
     before execution. Policies are functions that return
     {"allowed": bool, "reason": str}.
 
-    PEH Ch.11: "Policy as Code — the same policies that gate
-    human deployments must gate agent deployments."
-    Companion: github.com/achankra/peh, ch11/policy_gate.py
     """
 
     def __init__(self):
@@ -98,8 +87,6 @@ class GovernanceSecurity:
 
         Handles both sync and async policy check functions.
 
-        PEH Ch.11: "Policies are evaluated in sequence. A single
-        deny is a deny — there is no override without audit."
         """
         results = []
         all_allowed = True
@@ -135,11 +122,6 @@ class GovernanceObservability:
     When an ObservabilityStack is provided, events are also emitted
     to L01 infrastructure (traces, metrics, structured logs). This
     bridges L03 GOVERNANCE events to L01 observability.
-
-    PEH Ch.4: "Observability is not logging. Observability is the
-    ability to ask new questions of your system without deploying
-    new code."
-    Companion: github.com/achankra/peh, ch04/observability.py
     """
 
     def __init__(self, obs_stack: ObservabilityStack | None = None):
@@ -212,9 +194,6 @@ class Governance:
     emitted to L01 infrastructure — bridging L03 agent control
     to L01 traces, metrics, and structured logs.
 
-    PEH Ch.14: "GOVERNANCE is not bureaucracy. It is the control
-    plane that makes agent autonomy safe."
-    Companion: github.com/achankra/peh, ch14/governance.py
     """
 
     def __init__(self, obs_stack: ObservabilityStack | None = None):

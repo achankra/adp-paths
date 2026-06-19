@@ -6,13 +6,8 @@ Three components that provide structured observability across the platform:
     Metrics          — Prometheus-compatible counters, gauges, histograms
     StructuredLogger — JSON event log emitter with severity and context
 
-This is L01 infrastructure — the same observability fabric that captures
-pipeline telemetry also captures agent telemetry. GOVERNANCE.Observability
-(L03) wraps this infrastructure for agent-specific events.
-
-    "Observability is not logging. Observability is the ability to ask
-     new questions of your system without deploying new code."
-    — The Platform Engineer's Handbook, Chapter 4
+This is L01 infrastructure. GOVERNANCE.Observability (L03) wraps this
+for agent-specific events.
 
 PEH Reference:
     Chapter 4  — Embedding Observability (OpenTelemetry, metrics, traces)
@@ -60,9 +55,6 @@ class Span:
     execution, a governance check. Spans nest via parent_span_id to
     form a trace tree.
 
-    PEH Ch.4: "A trace is a tree of spans. The root span is the
-    request. Each child span is a unit of work within that request."
-    Companion: github.com/achankra/peh, ch04/tracing.py
     """
 
     name: str
@@ -119,9 +111,6 @@ class Tracer:
     """
     Span tracer — creates, manages, and exports spans.
 
-    PEH Ch.4: "The tracer is the entry point. Every platform action
-    starts a span. Every span has a parent, except the root."
-    Companion: github.com/achankra/peh, ch04/tracer.py
     """
 
     def __init__(self, service_name: str = "adp-paths"):
@@ -189,9 +178,6 @@ class Metrics:
     Supports counters (monotonically increasing), gauges (point-in-time
     values), and histograms (distribution of values).
 
-    PEH Ch.4: "Metrics answer 'how much' and 'how fast.' Counters
-    for totals, gauges for current state, histograms for latency."
-    Companion: github.com/achankra/peh, ch04/metrics.py
     """
 
     def __init__(self):
@@ -245,9 +231,6 @@ class Metrics:
         """
         Export metrics in Prometheus text exposition format.
 
-        PEH Ch.4: "Prometheus scrapes /metrics. The format is
-        human-readable and machine-parseable."
-        Companion: github.com/achankra/peh, ch04/prometheus_exporter.py
         """
         lines = []
         seen_help: set[str] = set()
@@ -330,9 +313,6 @@ class StructuredLogger:
     Every log entry is a JSON object with level, message, timestamp,
     and arbitrary context fields. Logs are queryable and filterable.
 
-    PEH Ch.4: "Structured logs are not printf. They are queryable
-    events. Every field is a dimension you can filter on."
-    Companion: github.com/achankra/peh, ch04/structured_logging.py
     """
 
     def __init__(self, service_name: str = "adp-paths"):
@@ -388,9 +368,6 @@ class ObservabilityStack:
     - L03 GOVERNANCE: agent events (identity checks, policy enforcement,
       execution audit trail)
 
-    PEH Ch.4: "The three pillars — metrics, logs, traces — are not
-    alternatives. They are complementary views of the same system."
-    Companion: github.com/achankra/peh, ch04/observability_stack.py
     """
 
     def __init__(self, service_name: str = "adp-paths"):

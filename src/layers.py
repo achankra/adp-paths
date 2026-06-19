@@ -8,10 +8,6 @@ L02 — Path Definitions: The eight paths to outcomes. Each typed as
 L03 — Agent Infrastructure: HARNESS (Context, Capability, Execution,
       Evaluation) and GOVERNANCE (Identity, Security, Observability).
 
-    "An IDP standardizes paths for humans;
-     an ADP makes those paths executable by agents at scale."
-    — From IDP to ADP (Weave Intelligence, 2025)
-
 PEH Reference:
     Chapter 1  — Groundwork (platform foundations)
     Chapter 2  — Kubernetes/Runtime (L01 infrastructure)
@@ -37,9 +33,6 @@ class PathType(str, Enum):
     """
     Path classification. Every path to outcome is one of these three.
 
-    PEH Ch.14: "Each path is typed — deterministic, probabilistic,
-    or hybrid — and the type determines which layers activate."
-    Companion: github.com/achankra/peh, ch14/path_types.py
     """
 
     DETERMINISTIC = "deterministic"
@@ -60,9 +53,6 @@ class L01Tooling:
     When an ObservabilityStack is provided, pipeline runs are traced
     with spans — one root span per pipeline, one child span per stage.
 
-    PEH Ch.8: "The pipeline is the arbiter. It does not know or care
-    whether the code was written by a human or an agent."
-    Companion: github.com/achankra/peh, ch08/pipeline.py
     """
 
     def __init__(self, obs_stack: ObservabilityStack | None = None):
@@ -86,9 +76,6 @@ class L01Tooling:
         When an ObservabilityStack is attached, each pipeline run
         is a trace and each stage is a span within that trace.
 
-        PEH Ch.8: "Deterministic pipelines fail fast. There is no
-        point running security scans on code that doesn't compile."
-        Companion: github.com/achankra/peh, ch08/pipeline.py
         """
         stages = self.pipelines.get(name)
         if stages is None:
@@ -186,9 +173,6 @@ class PathDefinition:
     """
     A registered path to outcome.
 
-    PEH Ch.10: "Golden paths are not suggestions. They are the
-    platform team's answer to 'how do we do X here?'"
-    Companion: github.com/achankra/peh, ch10/golden_paths.py
     """
 
     name: str
@@ -206,8 +190,6 @@ class L02PathDefinitions:
     Implement Change). At L2, six of eight paths are new or altered,
     and Dispatch Work is NEW.
 
-    PEH Ch.10: "Starter kits encode the golden path."
-    Companion: github.com/achankra/peh, ch10/path_registry.py
     """
 
     def __init__(self):
@@ -240,10 +222,6 @@ class L03AgentInfra:
     Contains HARNESS (orchestration) and GOVERNANCE (control).
     See: harness.py, governance.py
 
-    PEH Ch.14: "Agent infrastructure is not a separate system.
-    It is a layer that activates on top of the existing platform
-    when a path requires non-deterministic execution."
-    Companion: github.com/achankra/peh, ch14/agent_infra.py
     """
 
     def __init__(self, harness=None, governance=None):
