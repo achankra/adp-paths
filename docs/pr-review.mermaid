@@ -1,0 +1,73 @@
+---
+title: "/pr-review — Probabilistic Path"
+---
+sequenceDiagram
+    autonumber
+
+    participant H as Human
+    participant A as Agent
+    participant L01 as L01 Tooling
+    participant HARN as L03 HARNESS
+    participant GOV as L03 GOVERNANCE
+    participant Obs as ObservabilityStack
+
+    Note over H,Obs: L0-L1 — Human reads the diff. No agent. No HARNESS. No GOVERNANCE.
+    H->>L01: PR queued in review backlog
+    L01-->>H: Human reads diff, leaves comments (4-24 hours typical)
+
+    Note over H,Obs: L2 — Agent-driven review with HARNESS + GOVERNANCE
+
+    rect rgb(240, 240, 255)
+        Note right of GOV: GOVERNANCE wraps the entire execution
+
+        A->>GOV: governance.identity.register(agent_id, {team, permissions})
+        GOV->>Obs: obs.tracer.start_span("governance-wrap")
+
+        A->>GOV: governance.security.add_policy("repo-scope-check")
+        A->>GOV: governance.security.add_policy("no-merge-policy")
+
+        A->>GOV: governance.wrap(agent_id, action, harness_fn)
+        activate GOV
+        GOV->>GOV: identity.verify(agent_id)
+        GOV->>GOV: security.enforce(action)
+        GOV->>Obs: obs_stack.tracer.start_span("governance-wrap")
+        GOV->>Obs: obs_stack.logger.info("Governance wrap started")
+    end
+
+    rect rgb(255, 245, 230)
+        Note right of HARN: HARNESS orchestrates the agent execution
+
+        GOV->>HARN: harness.run(input, "generate-review", constraints)
+        activate HARN
+
+        Note over HARN: 1. Context
+        HARN->>L01: Read source files (file_paths)
+        L01-->>HARN: file contents, ADRs, conventions
+
+        Note over HARN: 2. Capability
+        HARN->>HARN: Select model by change_type<br/>(routine → fast, security → thorough)
+
+        Note over HARN: 3. Execution
+        alt simulate mode
+            HARN->>HARN: ast.parse() heuristic analysis
+            HARN->>HARN: Pattern-based code review
+        else live mode
+            HARN->>HARN: Claude API generates structured review
+        end
+
+        Note over HARN: 4. Evaluation
+        HARN->>HARN: Assess confidence, determine action<br/>(human-validates — agent does NOT merge)
+
+        HARN-->>GOV: {components: {context, capability, execution, evaluation}}
+        deactivate HARN
+    end
+
+    rect rgb(240, 240, 255)
+        GOV->>GOV: observability.record(execution_event)
+        GOV->>Obs: obs_stack.tracer.end_span("governance-wrap")
+        GOV->>Obs: obs_stack.metrics.counter("governance_executions")
+        GOV-->>A: governed_result {identity, security, result}
+        deactivate GOV
+    end
+
+    A-->>H: Structured review with evidence trail<br/>Human validates and decides whether to merge

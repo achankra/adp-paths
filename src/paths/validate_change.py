@@ -169,8 +169,9 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
     simulate = options.get("simulate", True)
     model = options.get("model")
 
+    obs = options.get("obs_stack")
     harness = Harness(simulate=simulate, model=model)
-    governance = Governance()
+    governance = Governance(obs_stack=obs)
 
     # Copy target files to a temp directory so we can modify them in the loop
     source_files = change.get("file_paths") or [
@@ -202,7 +203,7 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
 
     while attempt < max_retries:
         # L01: Run the deterministic gate (real Ruff)
-        tooling = L01Tooling()
+        tooling = L01Tooling(obs_stack=obs)
         stages = create_validation_stages(target_files)
         tooling.register_pipeline("validate-change", stages)
         pipeline_result = await tooling.run_pipeline("validate-change", {})
