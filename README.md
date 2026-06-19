@@ -33,7 +33,7 @@ L01  Tooling (IDP)           CI pipelines, GitOps, observability, identity,
                              policy-as-code. Does not change when agents arrive.
 ```
 
-For the L01 foundation -- Kubernetes runtime, GitOps, CI/CD pipelines, observability, policy-as-code -- see *The Platform Engineer's Handbook* (Chankramath, Packt, 2026, ISBN 978-1-80638-013-8) and the companion repository at [github.com/achankra/peh](https://github.com/achankra/peh).
+For the L01 foundation -- Kubernetes runtime, GitOps, CI/CD pipelines, observability, policy-as-code -- see [*The Platform Engineer's Handbook*](https://peh-packt.platformetrics.com/) (Chankramath, Packt, 2026, ISBN 978-1-80638-013-8) and the companion repository at [github.com/achankra/peh](https://github.com/achankra/peh).
 
 ---
 
@@ -271,9 +271,9 @@ Every module in the codebase includes PEH chapter references in its docstring an
 
 ## References
 
-1. *The Four Levels of Agentic Software Development in the Enterprise.* Weave Intelligence, 2025.
-2. *From IDP to ADP: Why Platform Engineers Now Build Agentic Development Platforms.* Weave Intelligence, 2025.
-3. Chankramath, A. *The Platform Engineer's Handbook.* Packt, 2026. ISBN 978-1-80638-013-8.
+1. *[The Four Levels of Agentic Software Development in the Enterprise](https://weaveintelligence.io/research/the-four-levels-of-agentic-software-development-in-the-enterprise).* Weave Intelligence, 2025.
+2. *[From IDP to ADP: Why Platform Engineers Now Build Agentic Development Platforms](https://weaveintelligence.io/blog/from-idp-to-adp).* Weave Intelligence, 2025.
+3. Chankramath, A. *The Platform Engineer's Handbook.* Packt, 2026. ISBN 978-1-80638-013-8. [Book website](https://peh-packt.platformetrics.com/) · [Amazon](https://www.amazon.com/Platform-Engineers-Handbook-developer-focused-streamline-ebook/dp/B0FR59Z7Q2/)
 4. Companion repository: [github.com/achankra/peh](https://github.com/achankra/peh)
 
 ---
