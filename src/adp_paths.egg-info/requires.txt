@@ -1,0 +1,12 @@
+
+[all]
+anthropic>=0.39.0
+pytest>=8.0
+ruff>=0.4.0
+
+[dev]
+pytest>=8.0
+ruff>=0.4.0
+
+[live]
+anthropic>=0.39.0

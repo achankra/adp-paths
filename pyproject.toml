@@ -1,0 +1,31 @@
+[project]
+name = "adp-paths"
+version = "1.0.0"
+description = "ADP in Action — Functional demo of L0/L1 to L2/L3 platform path transitions. Real Ruff linting, real tests, optional Claude integration."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "Ajay Chankramath", email = "ajay@platformengineering.org" },
+]
+keywords = ["platform-engineering", "adp", "idp", "agentic-development"]
+
+dependencies = []
+
+[project.optional-dependencies]
+live = ["anthropic>=0.39.0"]
+dev = ["pytest>=8.0", "ruff>=0.4.0"]
+all = ["anthropic>=0.39.0", "pytest>=8.0", "ruff>=0.4.0"]
+
+[project.scripts]
+adp-demo = "src.cli:main"
+
+[project.urls]
+Repository = "https://github.com/achankra/peh"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+extend = "ruff.toml"

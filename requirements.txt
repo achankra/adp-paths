@@ -1,0 +1,8 @@
+# Core (no dependencies for simulate mode)
+
+# For --live mode (Claude API)
+# anthropic>=0.39.0
+
+# For development
+pytest>=8.0
+ruff>=0.4.0
