@@ -8,15 +8,16 @@ This codebase demonstrates how platform paths transition from L0/L1 (human-drive
 
 ## What This Shows
 
-Three platform paths, each implemented at two maturity levels:
+Four platform paths, each implemented at two maturity levels:
 
 | Path | Type at L2 | L0-L1 Behavior | L2 Behavior |
 |------|-----------|----------------|-------------|
 | `/ci-build` | Deterministic | Human triggers pipeline | Same pipeline, agent may author the code |
 | `/pr-review` | Probabilistic | Human reads diff manually | Agent generates structured review with HARNESS |
 | `/validate-change` | Hybrid | Single gate, human fixes | Agent + gate feedback loop with retry limit |
+| `/dispatch-work` | Probabilistic | Human picks from backlog | Platform dispatches work to agents by capability |
 
-The key structural insight: **deterministic paths stay on L01 at every maturity level.** Only probabilistic and hybrid paths activate L02 (path definitions) and L03 (agent infrastructure).
+The key structural insight: **deterministic paths stay on L01 at every maturity level.** Only probabilistic and hybrid paths activate L02 (path definitions) and L03 (agent infrastructure). Dispatch Work is a *new* path at L2 — it does not exist at L0-L1.
 
 ---
 
@@ -29,9 +30,12 @@ L03  Agent Infrastructure    HARNESS (Context, Capability, Execution, Evaluation
 L02  Path Definitions        8 paths to outcomes, each typed as:
                              deterministic | probabilistic | hybrid
      ─────────────────────────────────────────────────────────────────────────
-L01  Tooling (IDP)           CI pipelines, GitOps, observability, identity,
-                             policy-as-code. Does not change when agents arrive.
+L01  Tooling (IDP)           CI pipelines, GitOps, observability (traces,
+                             metrics, logs), identity, policy-as-code.
+                             Does not change when agents arrive.
 ```
+
+GOVERNANCE.Observability (L03) bridges to L01 observability infrastructure — agent events emit to the same traces, metrics, and structured logs that pipelines use.
 
 For the L01 foundation -- Kubernetes runtime, GitOps, CI/CD pipelines, observability, policy-as-code -- see [*The Platform Engineer's Handbook*](https://peh-packt.platformetrics.com/) (Chankramath, Packt, 2026, ISBN 978-1-80638-013-8) and the companion repository at [github.com/achankra/peh](https://github.com/achankra/peh).
 
@@ -102,6 +106,7 @@ python -m src.cli --simulate
 python -m src.cli --simulate ci-build
 python -m src.cli --simulate pr-review
 python -m src.cli --simulate validate-change
+python -m src.cli --simulate dispatch-work
 ```
 
 ### Live mode (requires Anthropic API key)
@@ -154,6 +159,38 @@ The GOVERNANCE layer is identical in both modes — identity verification, polic
 
 ---
 
+## Observability
+
+The codebase includes a full L01 observability infrastructure (`src/observability.py`) with three pillars:
+
+- **Traces** — OpenTelemetry-compatible spans with parent-child relationships. Each pipeline run is a trace, each stage is a child span. Each dispatch cycle is a trace, each assignment is a span.
+- **Metrics** — Prometheus-compatible counters, gauges, and histograms. Pipeline pass/fail rates, dispatch assignment counts, governance event tallies, cycle duration.
+- **Structured Logs** — JSON event log entries with severity, message, timestamp, and arbitrary context fields.
+
+GOVERNANCE.Observability (L03) emits to this L01 infrastructure when an ObservabilityStack is provided, bridging agent-level events to the same telemetry fabric that pipelines use.
+
+### Exporting Telemetry
+
+```bash
+python -m src.cli --simulate --export-telemetry ./telemetry
+```
+
+This writes four files: `traces.json`, `metrics.json`, `logs.json`, and `prometheus.txt`.
+
+### Grafana Dashboard
+
+A pre-configured Grafana + Prometheus stack is provided in `grafana/`:
+
+```bash
+cd grafana
+docker-compose up -d
+# Open http://localhost:3000 (admin/admin)
+```
+
+The dashboard has three sections mapped to the three-layer architecture: L01 Pipeline Telemetry, L02 Dispatch Work, and L03 GOVERNANCE Events. See `grafana/README.md` for details.
+
+---
+
 ## Project Structure
 
 ```
@@ -170,22 +207,32 @@ adp_paths/
 │   ├── layers.py               # Three-layer architecture (L01, L02, L03)
 │   ├── harness.py              # HARNESS: Context, Capability, Execution, Evaluation
 │   ├── governance.py           # GOVERNANCE: Identity, Security, Observability
+│   ├── observability.py        # L01 observability: traces, metrics, structured logs
 │   └── paths/
 │       ├── __init__.py
 │       ├── ci_build.py         # Deterministic — stays on L01
 │       ├── pr_review.py        # Probabilistic — activates L02 + L03 at L2
-│       └── validate_change.py  # Hybrid — agent + gate loop at L2
+│       ├── validate_change.py  # Hybrid — agent + gate loop at L2
+│       └── dispatch_work.py    # Dispatch — NEW at L2, assigns work to agents
 ├── sample/
 │   └── src/
 │       ├── __init__.py
 │       ├── handler.py          # Platform API handler (the code pipelines operate on)
 │       └── utils.py            # Platform utilities (validation, formatting, sanitization)
+├── grafana/
+│   ├── docker-compose.yml      # Grafana + Prometheus stack
+│   ├── prometheus.yml          # Prometheus scrape config
+│   ├── README.md               # Grafana setup instructions
+│   ├── dashboards/
+│   │   └── adp-dashboard.json  # Pre-configured ADP observability dashboard
+│   └── provisioning/           # Auto-provisioned datasources and dashboard config
 └── tests/
     ├── __init__.py
     ├── test_tools.py           # 12 tests — lint, test runner, build, security scan
     ├── test_governance.py      # 12 tests — identity, security policies, observability, wrap
     ├── test_harness.py         # 13 tests — context, capability, execution, evaluation, flow
-    └── test_paths.py           # 16 tests — ci-build, pr-review, validate-change at L01/L02
+    ├── test_observability.py   # 26 tests — spans, tracer, metrics, logger, stack
+    └── test_paths.py           # 24 tests — ci-build, pr-review, validate-change, dispatch-work
 ```
 
 ---
@@ -193,7 +240,7 @@ adp_paths/
 ## Running Tests
 
 ```bash
-# Run all 53 tests
+# Run all 87 tests
 pytest
 
 # Run with verbose output
@@ -233,6 +280,10 @@ Ruff configuration is in `ruff.toml`. Target version is Python 3.11, line length
 
 **`/validate-change` (hybrid):** L0-L1 is a single gate. L2 loops on failure with agent-generated fixes. Retry limit is enforced. Exhaustion triggers human escalation. The deterministic gate (L01 pipeline) is unchanged between levels.
 
+**`/dispatch-work` (dispatch):** Does not exist at L0-L1 (humans pick from backlog, no dispatch logic). At L2, work items are queued by priority, matched to agents by capability, assigned with GOVERNANCE wrapping, and escalated when no capable agent is available. Priority ordering is verified (critical items dispatch first).
+
+**Observability:** Spans nest correctly (parent-child trace trees). Metrics increment and export in Prometheus text format. Structured logs filter by level and include context fields. The ObservabilityStack exports all three formats to disk.
+
 ---
 
 ## PEH Chapter Mapping
@@ -261,9 +312,11 @@ Every module in the codebase includes PEH chapter references in its docstring an
 | `layers.py` | Ch 1, 2, 8, 9, 10, 14 | `ch08/`, `ch14/layers.py` |
 | `harness.py` | Ch 14 | `ch14/harness.py` |
 | `governance.py` | Ch 3, 4, 11, 14 | `ch03/identity.py`, `ch14/governance.py` |
+| `observability.py` | Ch 4, 14 | `ch04/observability.py`, `ch04/tracer.py` |
 | `paths/ci_build.py` | Ch 8 | `ch08/ci_build.py` |
 | `paths/pr_review.py` | Ch 14 | `ch14/pr_review.py` |
 | `paths/validate_change.py` | Ch 4, 11, 13 | `ch04/observability.py`, `ch13/feedback_loop.py` |
+| `paths/dispatch_work.py` | Ch 8, 10, 14 | `ch14/dispatch.py`, `ch08/work_queue.py` |
 | `sample/src/handler.py` | Ch 5 | `ch05/handler.py` |
 | `sample/src/utils.py` | Ch 3 | `ch03/utils.py` |
 

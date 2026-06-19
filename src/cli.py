@@ -30,7 +30,8 @@ import os
 import sys
 from pathlib import Path
 
-from src.paths import ci_build, pr_review, validate_change
+from src.observability import ObservabilityStack
+from src.paths import ci_build, dispatch_work, pr_review, validate_change
 
 SAMPLE_DIR = Path(__file__).parent.parent / "sample" / "src"
 
@@ -269,6 +270,86 @@ async def demo_validate_change(args):
     print("  The agent retries until passing — with a limit and human escalation.")
 
 
+async def demo_dispatch_work(args):
+    header("/dispatch-work — Dispatch Path (L2 only)")
+
+    work_items = [
+        {"id": "work-001", "type": "review", "priority": "high",
+         "source": {"trigger": "pr-opened", "repo": "platform-api"}},
+        {"id": "work-002", "type": "validate", "priority": "critical",
+         "source": {"trigger": "commit-pushed", "repo": "platform-api"}},
+        {"id": "work-003", "type": "build", "priority": "medium",
+         "source": {"trigger": "scheduled", "repo": "platform-api"}},
+        {"id": "work-004", "type": "review", "priority": "low",
+         "source": {"trigger": "pr-opened", "repo": "platform-utils"}},
+        {"id": "work-005", "type": "remediate", "priority": "high",
+         "source": {"trigger": "alert-fired", "repo": "platform-api"}},
+    ]
+
+    # L0-L1
+    subheader("L0-L1: Human-driven (no dispatch)")
+    l01 = await dispatch_work.run_at_l01(work_items)
+    label("Path", l01["path"])
+    label("Maturity", l01["maturity_level"])
+    label("Type", l01["type"])
+    label("Layers", layer_chip(l01["layers"]))
+    label("Triggered by", l01["triggered_by"])
+    label("Queue size", str(l01["dispatch"]["queue_size"]))
+    label("Queue by priority", str(l01["dispatch"]["queue_by_priority"]))
+    label("Items assigned", str(l01["dispatch"]["items_assigned"]))
+    label("Assignment method", l01["dispatch"]["assignment_method"])
+    label("HARNESS", "None")
+    label("GOVERNANCE", "None")
+    print_summary(l01["summary"])
+
+    # L2
+    mode_label = "simulate" if args.simulate else "live"
+    subheader(f"L2: Agent dispatch ({mode_label})")
+    l02 = await dispatch_work.run_at_l02(
+        work_items,
+        {"simulate": args.simulate, "model": args.model},
+    )
+    label("Path", l02["path"])
+    label("Maturity", l02["maturity_level"])
+    label("Type", str(l02["type"]))
+    label("Mode", l02["mode"])
+    label("Layers", layer_chip(l02["layers"]))
+    label("Triggered by", l02["triggered_by"])
+    label("Items received", str(l02["dispatch"]["items_received"]))
+    label("Items assigned", str(l02["dispatch"]["items_assigned"]))
+    label("Items escalated", str(l02["dispatch"]["items_escalated"]))
+    label("Dispatch method", l02["dispatch"]["method"])
+
+    if l02["dispatch"]["assignments"]:
+        print(f"\n  {BOLD}Assignments:{RESET}")
+        for a in l02["dispatch"]["assignments"]:
+            path_target = a.get("target_path", "unknown")
+            print(f"    {GREEN}ASSIGNED{RESET} {a['item_id']} ({a['type']}) → {a['assigned_to']} → {path_target}")
+
+    if l02["dispatch"]["escalations"]:
+        print(f"\n  {BOLD}Escalations:{RESET}")
+        for e in l02["dispatch"]["escalations"]:
+            print(f"    {YELLOW}ESCALATED{RESET} {e['item_id']} ({e['type']}) — {e['reason']}")
+
+    print(f"\n  {BOLD}GOVERNANCE:{RESET}")
+    if l02["governance"]:
+        label("  Identity", l02["governance"]["identity"])
+        label("  Security", l02["governance"]["security"])
+        gov_obs = l02["governance"]["observability"]
+        label("  Observability", f"{gov_obs['total_executions']} event(s) recorded")
+
+    print(f"\n  {BOLD}Observability:{RESET}")
+    if l02["observability"]:
+        label("  Spans", str(l02["observability"]["spans"]))
+        label("  Log entries", str(l02["observability"]["logs"]))
+
+    label("Duration", f"{l02['duration_ms']}ms")
+    print_summary(l02["summary"])
+
+    print(f"\n  {GREEN}{BOLD}Key insight:{RESET} At L2, Dispatch Work is a new path.")
+    print("  Work is assigned to agents by capability — not picked up by humans.")
+
+
 # ── Main ─────────────────────────────────────────────────────────
 
 def main():
@@ -278,7 +359,7 @@ def main():
     parser.add_argument(
         "path",
         nargs="?",
-        choices=["ci-build", "pr-review", "validate-change"],
+        choices=["ci-build", "pr-review", "validate-change", "dispatch-work"],
         help="Run a specific path (default: all paths)",
     )
     parser.add_argument(
@@ -297,6 +378,13 @@ def main():
         type=str,
         default=None,
         help="Anthropic model name (default: claude-sonnet-4-20250514)",
+    )
+    parser.add_argument(
+        "--export-telemetry",
+        type=str,
+        default=None,
+        metavar="DIR",
+        help="Export observability data (traces, metrics, logs) to the specified directory",
     )
 
     args = parser.parse_args()
@@ -319,13 +407,14 @@ def main():
     mode = "simulate (local heuristics)" if args.simulate else f"live (Claude API: {args.model or 'claude-sonnet-4-20250514'})"
     print(f"{DIM}  Three-Layer Architecture: L01 Tooling | L02 Paths | L03 Agents")
     print(f"  Mode: {mode}")
-    print(f"  Reference: The Platform Engineer's Handbook (Chankramath, 2026)")
+    print("  Reference: The Platform Engineer's Handbook (Chankramath, 2026)")
     print(f"  Companion: github.com/achankra/peh{RESET}")
 
     runners = {
         "ci-build": demo_ci_build,
         "pr-review": demo_pr_review,
         "validate-change": demo_validate_change,
+        "dispatch-work": demo_dispatch_work,
     }
 
     async def run():
@@ -334,6 +423,14 @@ def main():
         else:
             for runner in runners.values():
                 await runner(args)
+
+        # Export telemetry if requested
+        if args.export_telemetry:
+            obs = ObservabilityStack(service_name="adp-demo")
+            obs.logger.info("Demo run completed", mode=mode, path=args.path or "all")
+            obs.export_all(args.export_telemetry)
+            print(f"\n  {GREEN}{BOLD}Telemetry exported to: {args.export_telemetry}/{RESET}")
+            print("    traces.json, metrics.json, logs.json, prometheus.txt")
 
     asyncio.run(run())
 

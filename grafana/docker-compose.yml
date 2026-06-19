@@ -1,0 +1,46 @@
+# ADP Observability Stack — Grafana + Prometheus
+#
+# Run:   docker-compose up -d
+# Open:  http://localhost:3000 (admin/admin)
+# Stop:  docker-compose down
+#
+# Prometheus scrapes the /metrics endpoint from the ADP demo runner.
+# Grafana connects to Prometheus as a data source and loads the
+# pre-configured ADP dashboard.
+#
+# PEH Ch.4: "Observability is the ability to ask new questions of
+# your system without deploying new code."
+
+version: "3.8"
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: adp-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: adp-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/adp-dashboard.json
+    volumes:
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - ./dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:

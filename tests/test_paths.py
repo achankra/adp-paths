@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from src.paths import ci_build, pr_review, validate_change
+from src.paths import ci_build, dispatch_work, pr_review, validate_change
 
 SAMPLE_DIR = Path(__file__).parent.parent / "sample" / "src"
 SAMPLE_FILES = [
@@ -213,3 +213,136 @@ class TestValidateChange:
             {"simulate": True},
         )
         assert result["result"]["resolved_by"] in ("first-pass", "agent-fix")
+
+
+# ── /dispatch-work — Dispatch (L2 only) ─────────────────────────
+
+
+WORK_ITEMS = [
+    {"id": "w-001", "type": "review", "priority": "high"},
+    {"id": "w-002", "type": "validate", "priority": "critical"},
+    {"id": "w-003", "type": "build", "priority": "medium"},
+    {"id": "w-004", "type": "review", "priority": "low"},
+]
+
+
+class TestDispatchWork:
+    """
+    Dispatch Work is a NEW path at L2. At L0-L1, humans
+    pick work from a backlog — no dispatch logic.
+
+    PEH Ch.14: "At L2, Dispatch Work assigns work to agents
+    by capability — not picked up by humans."
+    """
+
+    @pytest.mark.asyncio
+    async def test_l01_no_dispatch(self):
+        """At L0-L1, work is queued but not dispatched."""
+        result = await dispatch_work.run_at_l01(WORK_ITEMS)
+        assert result["path"] == "/dispatch-work"
+        assert result["maturity_level"] == "L0-L1"
+        assert result["type"] == "manual"
+        assert result["layers"] == ["L01"]
+        assert result["triggered_by"] == "human"
+        assert result["harness"] is None
+        assert result["governance"] is None
+        assert result["dispatch"]["items_queued"] == 4
+        assert result["dispatch"]["items_assigned"] == 0
+        assert result["dispatch"]["assignment_method"] == "human-picks-from-board"
+
+    @pytest.mark.asyncio
+    async def test_l01_queue_by_priority(self):
+        result = await dispatch_work.run_at_l01(WORK_ITEMS)
+        by_priority = result["dispatch"]["queue_by_priority"]
+        assert by_priority["critical"] == 1
+        assert by_priority["high"] == 1
+        assert by_priority["medium"] == 1
+        assert by_priority["low"] == 1
+
+    @pytest.mark.asyncio
+    async def test_l02_dispatches_all_items(self):
+        result = await dispatch_work.run_at_l02(
+            WORK_ITEMS,
+            {"simulate": True},
+        )
+        assert result["maturity_level"] == "L2"
+        assert result["type"] == "probabilistic"
+        assert result["mode"] == "simulate"
+        assert result["layers"] == ["L01", "L02", "L03"]
+        assert result["dispatch"]["items_received"] == 4
+        assert result["dispatch"]["items_assigned"] == 4
+        assert result["dispatch"]["items_escalated"] == 0
+
+    @pytest.mark.asyncio
+    async def test_l02_assigns_by_capability(self):
+        result = await dispatch_work.run_at_l02(
+            WORK_ITEMS,
+            {"simulate": True},
+        )
+        assignments = result["dispatch"]["assignments"]
+        # Review items should go to review-capable agents
+        review_assignments = [a for a in assignments if a["type"] == "review"]
+        for a in review_assignments:
+            assert a["target_path"] == "/pr-review"
+        # Build items to build agent
+        build_assignments = [a for a in assignments if a["type"] == "build"]
+        for a in build_assignments:
+            assert a["target_path"] == "/ci-build"
+            assert a["assigned_to"] == "build-agent-001"
+
+    @pytest.mark.asyncio
+    async def test_l02_has_governance(self):
+        result = await dispatch_work.run_at_l02(
+            WORK_ITEMS,
+            {"simulate": True},
+        )
+        assert result["governance"] is not None
+        assert result["harness"] == "activated"
+        gov = result["governance"]
+        assert "identity" in gov
+        assert "security" in gov
+        assert "observability" in gov
+
+    @pytest.mark.asyncio
+    async def test_l02_has_observability(self):
+        result = await dispatch_work.run_at_l02(
+            WORK_ITEMS,
+            {"simulate": True},
+        )
+        obs = result["observability"]
+        assert obs["spans"] >= 5  # root + one per item
+        assert obs["logs"] >= 2  # start + end
+
+    @pytest.mark.asyncio
+    async def test_l02_escalates_unknown_type(self):
+        """Items with no capable agent should escalate."""
+        from src.paths.dispatch_work import AgentCapability
+
+        items = [{"id": "w-x", "type": "unknown-type", "priority": "high"}]
+        result = await dispatch_work.run_at_l02(
+            items,
+            {
+                "simulate": True,
+                "agents": [
+                    AgentCapability(
+                        agent_id="review-only",
+                        capabilities=["review"],
+                    ),
+                ],
+            },
+        )
+        assert result["dispatch"]["items_escalated"] == 1
+        assert result["dispatch"]["items_assigned"] == 0
+        assert result["dispatch"]["escalations"][0]["reason"] == "no-capable-agent-available"
+
+    @pytest.mark.asyncio
+    async def test_l02_priority_ordering(self):
+        """Critical items should be dispatched before low-priority items."""
+        result = await dispatch_work.run_at_l02(
+            WORK_ITEMS,
+            {"simulate": True},
+        )
+        assignments = result["dispatch"]["assignments"]
+        # First assignment should be the critical item (w-002)
+        assert assignments[0]["item_id"] == "w-002"
+        assert assignments[0]["priority"] == "critical"

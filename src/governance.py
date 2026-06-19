@@ -28,6 +28,8 @@ import inspect
 from datetime import datetime, timezone
 from typing import Any, Callable
 
+from src.observability import LogLevel, ObservabilityStack, SpanStatus
+
 
 class GovernanceIdentity:
     """
@@ -130,13 +132,17 @@ class GovernanceObservability:
     Every agent action is recorded — approved, rejected, escalated,
     or overridden. The audit trail is immutable within a session.
 
+    When an ObservabilityStack is provided, events are also emitted
+    to L01 infrastructure (traces, metrics, structured logs). This
+    bridges L03 GOVERNANCE events to L01 observability.
+
     PEH Ch.4: "Observability is not logging. Observability is the
     ability to ask new questions of your system without deploying
     new code."
     Companion: github.com/achankra/peh, ch04/observability.py
     """
 
-    def __init__(self):
+    def __init__(self, obs_stack: ObservabilityStack | None = None):
         self.events: list[dict] = []
         self.metrics = {
             "total_executions": 0,
@@ -145,6 +151,7 @@ class GovernanceObservability:
             "escalations": 0,
             "overrides": 0,
         }
+        self._obs_stack = obs_stack
 
     def record(self, event: dict):
         """Record an event in the audit trail."""
@@ -163,6 +170,19 @@ class GovernanceObservability:
             self.metrics["escalations"] += 1
         elif action == "human-override":
             self.metrics["overrides"] += 1
+
+        # Emit to L01 observability infrastructure when available
+        if self._obs_stack:
+            self._obs_stack.metrics.counter(
+                "governance_events",
+                labels={"action": action, "path": event.get("path", "unknown")},
+            )
+            self._obs_stack.logger.info(
+                f"GOVERNANCE event: {action}",
+                agent_id=event.get("agent_id"),
+                path=event.get("path"),
+                action=action,
+            )
 
     def get_metrics(self) -> dict:
         return dict(self.metrics)
@@ -188,15 +208,20 @@ class Governance:
     Wraps every agent action with identity verification, policy
     enforcement, and observability recording.
 
+    When an ObservabilityStack is provided, GOVERNANCE events are
+    emitted to L01 infrastructure — bridging L03 agent control
+    to L01 traces, metrics, and structured logs.
+
     PEH Ch.14: "GOVERNANCE is not bureaucracy. It is the control
     plane that makes agent autonomy safe."
     Companion: github.com/achankra/peh, ch14/governance.py
     """
 
-    def __init__(self):
+    def __init__(self, obs_stack: ObservabilityStack | None = None):
         self.identity = GovernanceIdentity()
         self.security = GovernanceSecurity()
-        self.observability = GovernanceObservability()
+        self.observability = GovernanceObservability(obs_stack=obs_stack)
+        self._obs_stack = obs_stack
 
     async def wrap(self, agent_id: str, action: dict, fn: Callable) -> dict:
         """
@@ -204,7 +229,21 @@ class Governance:
 
         Sequence: verify identity → enforce policies → execute → record.
         If identity fails or policy denies, the action never executes.
+        When an ObservabilityStack is attached, a span traces the full
+        governance cycle.
         """
+        # Start governance span if obs stack is available
+        span = None
+        if self._obs_stack:
+            span = self._obs_stack.tracer.start_span(
+                f"governance-wrap-{agent_id}",
+                attributes={
+                    "agent_id": agent_id,
+                    "path": action.get("path", "unknown"),
+                    "action": action.get("action", "unknown"),
+                },
+            )
+
         # 1. Verify identity
         identity_result = self.identity.verify(agent_id)
         if not identity_result["verified"]:
@@ -214,6 +253,9 @@ class Governance:
                 "reason": identity_result["reason"],
                 "path": action.get("path"),
             })
+            if span:
+                span.add_event("identity-failed", {"reason": identity_result["reason"]})
+                self._obs_stack.tracer.end_span(span, SpanStatus.ERROR)
             return {
                 "allowed": False,
                 "reason": "identity-verification-failed",
@@ -230,6 +272,9 @@ class Governance:
                 "path": action.get("path"),
                 "policies": security_result["results"],
             })
+            if span:
+                span.add_event("policy-denied", {"policies": str(security_result["results"])})
+                self._obs_stack.tracer.end_span(span, SpanStatus.ERROR)
             return {
                 "allowed": False,
                 "reason": "policy-violation",
@@ -248,6 +293,10 @@ class Governance:
             "action": result.get("action", "completed"),
             "path": action.get("path"),
         })
+
+        if span:
+            span.add_event("execution-complete", {"action": result.get("action", "completed")})
+            self._obs_stack.tracer.end_span(span, SpanStatus.OK)
 
         return {
             "allowed": True,
