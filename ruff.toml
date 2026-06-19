@@ -1,0 +1,27 @@
+# Ruff configuration for the sample code that the deterministic pipeline lints.
+# These rules are intentionally strict — they represent the platform's golden path.
+
+target-version = "py311"
+line-length = 100
+
+[lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "S",     # flake8-bandit (security)
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "UP",    # pyupgrade
+]
+ignore = [
+    "S101",  # allow assert in tests
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101", "S106"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
