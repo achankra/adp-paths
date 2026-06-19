@@ -30,6 +30,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable
 
+from src.observability import ObservabilityStack, SpanStatus
+
 
 class PathType(str, Enum):
     """
@@ -55,15 +57,19 @@ class L01Tooling:
     Provides pipelines, policy gates, and telemetry. This layer is
     identical at L0/L1 and L2. It does not bend for agents.
 
+    When an ObservabilityStack is provided, pipeline runs are traced
+    with spans — one root span per pipeline, one child span per stage.
+
     PEH Ch.8: "The pipeline is the arbiter. It does not know or care
     whether the code was written by a human or an agent."
     Companion: github.com/achankra/peh, ch08/pipeline.py
     """
 
-    def __init__(self):
+    def __init__(self, obs_stack: ObservabilityStack | None = None):
         self.pipelines: dict[str, list[dict]] = {}
         self.policies: dict[str, Callable] = {}
         self.telemetry: list[dict] = []
+        self._obs_stack = obs_stack
 
     def register_pipeline(self, name: str, stages: list[dict]):
         """Register a named pipeline with its stages."""
@@ -77,6 +83,9 @@ class L01Tooling:
         """
         Execute a pipeline. Fail-fast on first stage failure.
 
+        When an ObservabilityStack is attached, each pipeline run
+        is a trace and each stage is a span within that trace.
+
         PEH Ch.8: "Deterministic pipelines fail fast. There is no
         point running security scans on code that doesn't compile."
         Companion: github.com/achankra/peh, ch08/pipeline.py
@@ -85,10 +94,28 @@ class L01Tooling:
         if stages is None:
             raise ValueError(f"Pipeline not found: {name}")
 
+        # Start pipeline span if obs stack is available
+        pipeline_span = None
+        if self._obs_stack:
+            pipeline_span = self._obs_stack.tracer.start_span(
+                f"pipeline-{name}",
+                attributes={"pipeline.name": name, "pipeline.stages": len(stages)},
+            )
+            self._obs_stack.logger.info(f"Pipeline started: {name}", pipeline=name)
+
         results = []
         all_passed = True
 
         for stage in stages:
+            # Start stage span
+            stage_span = None
+            if self._obs_stack and pipeline_span:
+                stage_span = self._obs_stack.tracer.start_span(
+                    f"stage-{stage['name']}",
+                    parent=pipeline_span,
+                    attributes={"stage.name": stage["name"], "stage.tool": stage["tool"]},
+                )
+
             result = await stage["run"](input_data)
             results.append({
                 "name": stage["name"],
@@ -97,9 +124,35 @@ class L01Tooling:
                 "output": result["output"],
                 "detail": result.get("detail"),
             })
+
+            # End stage span
+            if stage_span:
+                stage_span.set_attribute("stage.passed", result["passed"])
+                self._obs_stack.tracer.end_span(
+                    stage_span,
+                    SpanStatus.OK if result["passed"] else SpanStatus.ERROR,
+                )
+                self._obs_stack.metrics.counter(
+                    "pipeline_stage_runs",
+                    labels={"pipeline": name, "stage": stage["name"],
+                            "passed": str(result["passed"])},
+                )
+
             if not result["passed"]:
                 all_passed = False
                 break  # Fail-fast
+
+        # End pipeline span
+        if pipeline_span:
+            pipeline_span.set_attribute("pipeline.passed", all_passed)
+            self._obs_stack.tracer.end_span(
+                pipeline_span,
+                SpanStatus.OK if all_passed else SpanStatus.ERROR,
+            )
+            self._obs_stack.metrics.counter(
+                "pipeline_runs",
+                labels={"pipeline": name, "passed": str(all_passed)},
+            )
 
         record = {
             "pipeline": name,
