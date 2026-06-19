@@ -95,8 +95,9 @@ async def run_at_l02(pr: dict, options: dict | None = None) -> dict:
     simulate = options.get("simulate", True)
     model = options.get("model")
 
+    obs = options.get("obs_stack")
     harness = Harness(simulate=simulate, model=model)
-    governance = Governance()
+    governance = Governance(obs_stack=obs)
 
     # Register agent identity
     agent_id = options.get("agent_id", "pr-review-agent-001")

@@ -1,0 +1,50 @@
+---
+title: "/ci-build — Deterministic Path"
+---
+sequenceDiagram
+    autonumber
+
+    participant H as Human / Agent
+    participant L01 as L01 Tooling
+    participant Ruff as Ruff Linter
+    participant AST as ast.parse / importlib
+    participant Sec as Security Scanner
+    participant Obs as ObservabilityStack
+
+    Note over H,Obs: L0-L1 — Human pushes code. Pipeline runs. Human reads output.
+    H->>L01: run_pipeline("ci-build", input)
+    activate L01
+    L01->>Obs: tracer.start_span("pipeline-ci-build")
+    L01->>Ruff: lint(target_files)
+    Ruff-->>L01: {passed, error_count, warning_count}
+    L01->>Obs: tracer.start_span("stage-lint") / end_span
+    L01->>AST: run_tests(handler_path, assertions)
+    AST-->>L01: {passed, pass_count, total}
+    L01->>Obs: tracer.start_span("stage-test") / end_span
+    L01->>AST: build(target_files)
+    AST-->>L01: {passed, modules_checked, exports}
+    L01->>Obs: tracer.start_span("stage-build") / end_span
+    L01->>Sec: security_scan(target_files)
+    Sec-->>L01: {passed, findings, critical_count}
+    L01->>Obs: tracer.start_span("stage-security") / end_span
+    L01->>Obs: tracer.end_span(pipeline_span)
+    L01-->>H: pipeline_result {passed, stages[]}
+    deactivate L01
+
+    Note over H,Obs: L2 — Agent may have authored the code. Pipeline is identical.
+    H->>L01: run_pipeline("ci-build", input)
+    activate L01
+    L01->>Obs: tracer.start_span("pipeline-ci-build")
+    L01->>Ruff: lint(target_files)
+    Ruff-->>L01: result
+    L01->>AST: run_tests(handler_path, assertions)
+    AST-->>L01: result
+    L01->>AST: build(target_files)
+    AST-->>L01: result
+    L01->>Sec: security_scan(target_files)
+    Sec-->>L01: result
+    L01->>Obs: tracer.end_span(pipeline_span)
+    L01-->>H: pipeline_result (identical output)
+    deactivate L01
+
+    Note over H,Obs: No L02 path definitions. No L03 agent infrastructure.<br/>The pipeline does not know or care who wrote the code.

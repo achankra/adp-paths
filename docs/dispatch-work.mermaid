@@ -1,0 +1,83 @@
+---
+title: "/dispatch-work — Dispatch Path (L2 only)"
+---
+sequenceDiagram
+    autonumber
+
+    participant Trigger as Platform Event
+    participant Disp as Dispatcher (L02)
+    participant Q as WorkQueue (L01)
+    participant GOV as L03 GOVERNANCE
+    participant Obs as ObservabilityStack
+
+    Note over Trigger,Obs: L0-L1 — No dispatch path. Humans pick up work from a board.
+    Trigger->>Q: Work items arrive (PR opened, commit pushed, alert fired)
+    Q-->>Trigger: Items sit in backlog. Human picks from board.
+
+    Note over Trigger,Obs: L2 — Agent dispatch with capability matching
+
+    Trigger->>Disp: work_items[]
+    activate Disp
+
+    Disp->>Obs: tracer.start_span("dispatch-cycle")
+    Disp->>Obs: logger.info("Dispatch cycle started")
+
+    rect rgb(230, 245, 230)
+        Note right of Q: L01 — Load work queue (infrastructure)
+        Disp->>Q: enqueue(WorkItem) for each item
+        Q-->>Disp: Items queued by priority (critical > high > medium > low)
+        Disp->>Obs: metrics.gauge("dispatch_queue_size", count)
+    end
+
+    rect rgb(240, 240, 255)
+        Note right of GOV: L03 — Register agents in GOVERNANCE
+        Disp->>GOV: identity.register("review-agent-001", {capabilities: [review]})
+        Disp->>GOV: identity.register("validate-agent-001", {capabilities: [validate]})
+        Disp->>GOV: identity.register("build-agent-001", {capabilities: [build]})
+        Disp->>GOV: identity.register("general-agent-001", {capabilities: [review, validate, remediate]})
+        Disp->>GOV: security.add_policy("capability-scope-check")
+    end
+
+    loop For each work item (dequeued by priority)
+        Disp->>Q: dequeue()
+        Q-->>Disp: WorkItem {id, type, priority}
+        Disp->>Obs: tracer.start_span("assign-{item.id}")
+
+        rect rgb(255, 245, 230)
+            Note right of Disp: HARNESS-like: Context + Capability matching
+            Disp->>Disp: _match_agent(item, agents)<br/>capability match → capacity → lowest load
+        end
+
+        alt agent matched
+            rect rgb(240, 240, 255)
+                Note right of GOV: GOVERNANCE wraps the assignment
+                Disp->>GOV: governance.wrap(agent_id, "accept-assignment", assign_fn)
+                activate GOV
+                GOV->>GOV: identity.verify(agent_id)
+                GOV->>GOV: security.enforce("accept-assignment")
+                GOV->>Obs: tracer.start_span("governance-wrap")
+                GOV->>GOV: _execute_assignment(item, agent)
+                Note over GOV: item.status = "assigned"<br/>agent.current_load += 1
+                GOV->>GOV: observability.record(assignment_event)
+                GOV->>Obs: tracer.end_span("governance-wrap")
+                GOV-->>Disp: assignment {item_id, assigned_to, target_path}
+                deactivate GOV
+            end
+            Disp->>Obs: metrics.counter("dispatch_assignments", {type, agent})
+            Disp->>Obs: logger.info("Work item assigned")
+            Disp->>Obs: tracer.end_span(assign_span, OK)
+        else no agent available
+            Disp->>Obs: metrics.counter("dispatch_escalations", {type})
+            Disp->>Obs: logger.warn("Work item escalated")
+            Disp->>GOV: observability.record({action: "escalated"})
+            Disp->>Obs: tracer.end_span(assign_span, ERROR)
+            Note over Disp: item.status = "escalated"
+        end
+    end
+
+    Disp->>Obs: tracer.end_span("dispatch-cycle")
+    Disp->>Obs: metrics.histogram("dispatch_cycle_duration_ms")
+    Disp->>Obs: logger.info("Dispatch cycle complete")
+
+    Disp-->>Trigger: {assignments[], escalations[], observability}
+    deactivate Disp

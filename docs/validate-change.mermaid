@@ -1,0 +1,94 @@
+---
+title: "/validate-change — Hybrid Path"
+---
+sequenceDiagram
+    autonumber
+
+    participant H as Human
+    participant A as Agent
+    participant L01 as L01 Tooling
+    participant Ruff as Ruff Linter
+    participant AST as ast / Security
+    participant HARN as L03 HARNESS
+    participant GOV as L03 GOVERNANCE
+    participant Obs as ObservabilityStack
+
+    Note over H,Obs: L0-L1 — Single gate. Human reads output. Fixes manually.
+    H->>L01: run_pipeline("validate-change", input)
+    activate L01
+    L01->>Ruff: lint(target_files)
+    Ruff-->>L01: lint result
+    L01->>AST: build(target_files)
+    AST-->>L01: build result
+    L01->>AST: security_scan(target_files)
+    AST-->>L01: scan result
+    L01-->>H: pipeline_result — human reads and fixes manually
+    deactivate L01
+
+    Note over H,Obs: L2 — Agent + gate feedback loop (hybrid)
+
+    rect rgb(240, 240, 255)
+        Note right of GOV: GOVERNANCE setup
+        A->>GOV: identity.register(agent_id, {permissions: [read, fix, resubmit]})
+        A->>GOV: security.add_policy("retry-limit-policy")
+    end
+
+    loop Attempt 1..N (max_retries = 3)
+        rect rgb(230, 245, 230)
+            Note right of L01: L01 — Deterministic gate (same every time)
+            A->>L01: run_pipeline("validate-change", {})
+            activate L01
+            L01->>Obs: tracer.start_span("pipeline-validate-change")
+            L01->>Ruff: lint(target_files)
+            Ruff-->>L01: {passed, errors}
+            L01->>AST: build(target_files)
+            AST-->>L01: {passed, modules}
+            L01->>AST: security_scan(target_files)
+            AST-->>L01: {passed, findings}
+            L01->>Obs: tracer.end_span(pipeline_span)
+            L01-->>A: pipeline_result
+            deactivate L01
+        end
+
+        alt pipeline passed
+            A->>A: Break loop — validation complete
+        else pipeline failed
+            rect rgb(255, 245, 230)
+                Note right of HARN: L03 — Agent interprets failure, generates fix
+
+                A->>A: Collect structured failure signals from pipeline stages
+
+                A->>GOV: governance.wrap(agent_id, "generate-fix", fix_fn)
+                activate GOV
+                GOV->>GOV: identity.verify(agent_id)
+                GOV->>GOV: security.enforce("generate-fix")
+                GOV->>Obs: tracer.start_span("governance-wrap")
+
+                GOV->>HARN: _generate_fix(harness, files, errors, stages)
+                activate HARN
+
+                alt simulate mode
+                    HARN->>Ruff: lint(target_files, fix=True)
+                    Ruff-->>HARN: {fixable_count, auto-fixes applied}
+                else live mode
+                    HARN->>HARN: Claude API generates fix from failure signals
+                    HARN->>HARN: Write fixed code to temp file
+                end
+
+                HARN-->>GOV: fix_result {patch_generated, targets, fix_type}
+                deactivate HARN
+
+                GOV->>GOV: observability.record(execution_event)
+                GOV->>Obs: metrics.counter("governance_executions")
+                GOV-->>A: governed_result
+                deactivate GOV
+            end
+        end
+    end
+
+    alt resolved
+        A-->>H: Validation passed (first-pass or agent-fix)
+    else exhausted
+        A->>GOV: observability.record({action: "escalated"})
+        A-->>H: Escalated to human — retry limit reached
+    end

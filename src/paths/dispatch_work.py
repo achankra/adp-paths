@@ -242,8 +242,8 @@ async def run_at_l02(
     start = time.time()
     simulate = options.get("simulate", True)
 
-    governance = Governance()
-    obs = ObservabilityStack(service_name="dispatch-work")
+    obs = options.get("obs_stack") or ObservabilityStack(service_name="dispatch-work")
+    governance = Governance(obs_stack=obs)
 
     # Start root trace span
     root_span = obs.tracer.start_span("dispatch-cycle", attributes={

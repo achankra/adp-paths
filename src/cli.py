@@ -30,6 +30,7 @@ import os
 import sys
 from pathlib import Path
 
+from src.metrics_server import MetricsServer
 from src.observability import ObservabilityStack
 from src.paths import ci_build, dispatch_work, pr_review, validate_change
 
@@ -98,17 +99,18 @@ def print_summary(summary: dict):
 
 # ── Path demos ───────────────────────────────────────────────────
 
-async def demo_ci_build(args):
+async def demo_ci_build(args, options=None):
     header("/ci-build — Deterministic Path")
 
     sample_files = [
         str(SAMPLE_DIR / "handler.py"),
         str(SAMPLE_DIR / "utils.py"),
     ]
+    options = options or {}
 
     # L0-L1
     subheader("L0-L1: Human-driven")
-    l01 = await ci_build.run_at_l01({"file_paths": sample_files})
+    l01 = await ci_build.run_at_l01({"file_paths": sample_files}, options)
     label("Type", str(l01["type"]))
     label("Layers", layer_chip(l01["layers"]))
     label("Triggered by", l01["triggered_by"])
@@ -123,7 +125,7 @@ async def demo_ci_build(args):
     l02 = await ci_build.run_at_l02({
         "file_paths": sample_files,
         "triggered_by": "agent-commit",
-    })
+    }, options)
     label("Type", str(l02["type"]))
     label("Layers", layer_chip(l02["layers"]))
     label("Triggered by", l02["triggered_by"])
@@ -134,13 +136,14 @@ async def demo_ci_build(args):
     print_summary(l02["summary"])
 
 
-async def demo_pr_review(args):
+async def demo_pr_review(args, options=None):
     header("/pr-review — Probabilistic Path (at L2)")
 
     sample_files = [
         str(SAMPLE_DIR / "handler.py"),
         str(SAMPLE_DIR / "utils.py"),
     ]
+    options = options or {}
 
     # L0-L1
     subheader("L0-L1: Human-driven review")
@@ -162,6 +165,7 @@ async def demo_pr_review(args):
     # L2
     mode_label = "simulate" if args.simulate else "live"
     subheader(f"L2: Agent-driven review ({mode_label})")
+    l02_opts = {**options, "simulate": args.simulate, "model": args.model}
     l02 = await pr_review.run_at_l02(
         {
             "file_paths": sample_files,
@@ -170,7 +174,7 @@ async def demo_pr_review(args):
             "repository": "platform-api",
             "team": "platform",
         },
-        {"simulate": args.simulate, "model": args.model},
+        l02_opts,
     )
     label("Reviewer", l02["review"]["reviewer"])
     label("Method", l02["review"]["method"])
@@ -210,13 +214,14 @@ async def demo_pr_review(args):
     print_summary(l02["summary"])
 
 
-async def demo_validate_change(args):
+async def demo_validate_change(args, options=None):
     header("/validate-change — Hybrid Path (at L2)")
 
     sample_files = [
         str(SAMPLE_DIR / "handler.py"),
         str(SAMPLE_DIR / "utils.py"),
     ]
+    options = options or {}
 
     # L0-L1
     subheader("L0-L1: Single gate")
@@ -234,9 +239,10 @@ async def demo_validate_change(args):
     # L2
     mode_label = "simulate" if args.simulate else "live"
     subheader(f"L2: Agent + gate feedback loop ({mode_label})")
+    l02_opts = {**options, "max_retries": 3, "simulate": args.simulate, "model": args.model}
     l02 = await validate_change.run_at_l02(
         {"file_paths": sample_files},
-        {"max_retries": 3, "simulate": args.simulate, "model": args.model},
+        l02_opts,
     )
     label("Type", str(l02["type"]))
     label("Mode", l02["mode"])
@@ -261,7 +267,7 @@ async def demo_validate_change(args):
     print_summary(l02["summary"])
 
 
-async def demo_dispatch_work(args):
+async def demo_dispatch_work(args, options=None):
     header("/dispatch-work — Dispatch Path (L2 only)")
 
     work_items = [
@@ -276,6 +282,8 @@ async def demo_dispatch_work(args):
         {"id": "work-005", "type": "remediate", "priority": "high",
          "source": {"trigger": "alert-fired", "repo": "platform-api"}},
     ]
+
+    options = options or {}
 
     # L0-L1
     subheader("L0-L1: Human-driven (no dispatch)")
@@ -296,9 +304,10 @@ async def demo_dispatch_work(args):
     # L2
     mode_label = "simulate" if args.simulate else "live"
     subheader(f"L2: Agent dispatch ({mode_label})")
+    l02_opts = {**options, "simulate": args.simulate, "model": args.model}
     l02 = await dispatch_work.run_at_l02(
         work_items,
-        {"simulate": args.simulate, "model": args.model},
+        l02_opts,
     )
     label("Path", l02["path"])
     label("Maturity", l02["maturity_level"])
@@ -374,6 +383,17 @@ def main():
         metavar="DIR",
         help="Export observability data (traces, metrics, logs) to the specified directory",
     )
+    parser.add_argument(
+        "--serve-metrics",
+        action="store_true",
+        help="Start a Prometheus-compatible /metrics endpoint on port 8080",
+    )
+    parser.add_argument(
+        "--metrics-port",
+        type=int,
+        default=8080,
+        help="Port for the /metrics endpoint (default: 8080)",
+    )
 
     args = parser.parse_args()
 
@@ -406,19 +426,42 @@ def main():
     }
 
     async def run():
+        # Shared observability stack — all paths feed metrics into one place
+        obs = ObservabilityStack(service_name="adp-demo")
+        options = {"obs_stack": obs}
+
+        # Start metrics server if requested
+        metrics_server = None
+        if args.serve_metrics:
+            metrics_server = MetricsServer(obs, port=args.metrics_port)
+            metrics_server.start()
+            print(f"  {GREEN}{BOLD}Metrics server started: {metrics_server.url}{RESET}")
+            print(f"  {DIM}Prometheus can scrape this endpoint while the demo runs.{RESET}\n")
+
         if args.path:
-            await runners[args.path](args)
+            await runners[args.path](args, options)
         else:
             for runner in runners.values():
-                await runner(args)
+                await runner(args, options)
 
         # Export telemetry if requested
         if args.export_telemetry:
-            obs = ObservabilityStack(service_name="adp-demo")
             obs.logger.info("Demo run completed", mode=mode, path=args.path or "all")
             obs.export_all(args.export_telemetry)
             print(f"\n  {GREEN}{BOLD}Telemetry exported to: {args.export_telemetry}/{RESET}")
             print("    traces.json, metrics.json, logs.json, prometheus.txt")
+
+        # Keep metrics server alive so Prometheus can scrape final state
+        if metrics_server:
+            print(f"\n  {GREEN}{BOLD}Metrics available at: {metrics_server.url}{RESET}")
+            print(f"  {DIM}Press Ctrl+C to stop.{RESET}")
+            try:
+                while True:
+                    await asyncio.sleep(1)
+            except KeyboardInterrupt:
+                pass
+            finally:
+                metrics_server.stop()
 
     asyncio.run(run())
 

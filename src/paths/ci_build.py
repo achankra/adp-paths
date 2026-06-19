@@ -179,7 +179,7 @@ def _make_security_stage(target_files):
     return run
 
 
-async def run_at_l01(input_data: dict) -> dict:
+async def run_at_l01(input_data: dict, options: dict | None = None) -> dict:
     """
     Run /ci-build at L0-L1 (human-driven).
 
@@ -187,7 +187,9 @@ async def run_at_l01(input_data: dict) -> dict:
     If it fails, the developer reads output and fixes manually.
 
     """
-    tooling = L01Tooling()
+    options = options or {}
+    obs = options.get("obs_stack")
+    tooling = L01Tooling(obs_stack=obs)
     stages = create_default_stages(input_data)
     tooling.register_pipeline("ci-build", stages)
 
@@ -210,7 +212,7 @@ async def run_at_l01(input_data: dict) -> dict:
     }
 
 
-async def run_at_l02(input_data: dict) -> dict:
+async def run_at_l02(input_data: dict, options: dict | None = None) -> dict:
     """
     Run /ci-build at L2 (agent era).
 
@@ -218,7 +220,9 @@ async def run_at_l02(input_data: dict) -> dict:
     but the pipeline does not know or care.
 
     """
-    tooling = L01Tooling()
+    options = options or {}
+    obs = options.get("obs_stack")
+    tooling = L01Tooling(obs_stack=obs)
     stages = create_default_stages(input_data)
     tooling.register_pipeline("ci-build", stages)
 
