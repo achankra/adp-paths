@@ -92,3 +92,30 @@ sequenceDiagram
         A->>GOV: observability.record({action: "escalated"})
         A-->>H: Escalated to human — retry limit reached
     end
+
+%% Flow (L0-L1):
+%% (1) Human pushes code.
+%% (2) L01 Tooling runs the validation pipeline: lint (Ruff) → build (ast.parse) → security scan.
+%% (3) Pipeline returns pass/fail. Human reads the output.
+%% (4) If it failed, the human fixes manually and pushes again. No feedback loop. No agent.
+%%
+%% Flow (L2 — hybrid feedback loop):
+%% (1) Agent registers its identity with GOVERNANCE (permissions: read, fix, resubmit).
+%%     A retry-limit-policy is added to enforce the max_retries cap.
+%% (2) The loop begins. On each attempt:
+%%     (a) L01 runs the deterministic validation gate — the exact same pipeline as L0-L1.
+%%         Ruff lints the files, ast.parse verifies the build, security scanner checks for issues.
+%%         Each stage is traced via ObservabilityStack.
+%%     (b) If the pipeline passes, the loop breaks. Validation is complete.
+%%     (c) If the pipeline fails, the agent collects structured failure signals (which rules
+%%         failed, which lines, which error codes) from the pipeline stages.
+%%     (d) The agent calls governance.wrap() to generate a fix. GOVERNANCE verifies identity
+%%         and enforces policies before allowing the fix action.
+%%     (e) Inside the governance wrapper, HARNESS generates the fix:
+%%         - In simulate mode: Ruff --fix is called directly (deterministic auto-fix).
+%%         - In live mode: Claude API interprets the failure signals and generates a code patch.
+%%     (f) GOVERNANCE records the execution event, increments metrics, and returns the result.
+%%     (g) The fixed code is written to the temp file. The loop continues to the next attempt.
+%% (3) If the pipeline passes after a fix, the result is "resolved by agent-fix."
+%% (4) If the retry limit is exhausted without passing, the agent escalates to a human.
+%%     GOVERNANCE records the escalation event. The human takes over from here.

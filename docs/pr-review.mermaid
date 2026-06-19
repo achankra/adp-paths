@@ -71,3 +71,28 @@ sequenceDiagram
     end
 
     A-->>H: Structured review with evidence trail<br/>Human validates and decides whether to merge
+
+%% Flow (L0-L1):
+%% (1) PR is opened. It sits in the review backlog.
+%% (2) A human reviewer opens the diff, reads it, and leaves comments. Typical turnaround: 4-24 hours.
+%% (3) No agent, no HARNESS, no GOVERNANCE. Pure manual process.
+%%
+%% Flow (L2):
+%% (1) Agent registers its identity with GOVERNANCE (team scope, permissions: read + comment only).
+%% (2) Two security policies are added: repo-scope-check (agent stays within its repo) and
+%%     no-merge-policy (agent cannot merge — human approval required).
+%% (3) Agent calls governance.wrap(), which verifies identity and enforces all policies before
+%%     allowing execution. A trace span is opened.
+%% (4) Inside the governance wrapper, HARNESS.run() is called with four phases:
+%%     (a) Context — reads the source files, loads ADRs and team conventions from L01.
+%%     (b) Capability — selects the review model/strategy based on change type
+%%         (routine changes get a fast model, security changes get a thorough one).
+%%     (c) Execution — in simulate mode, ast.parse() runs heuristic analysis on the actual code.
+%%         In live mode, Claude API generates a structured review with categorized findings.
+%%     (d) Evaluation — assesses confidence. The action is always "human-validates" at L2.
+%%         The agent does NOT merge.
+%% (5) HARNESS returns the structured result (context, capability, execution, evaluation) to GOVERNANCE.
+%% (6) GOVERNANCE records the execution event in its observability layer, closes the trace span,
+%%     increments the governance_executions metric, and returns the governed result.
+%% (7) The agent presents the structured review (with evidence trail and categorized findings) to the human.
+%% (8) The human validates and decides whether to merge. The agent never takes that action.

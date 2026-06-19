@@ -81,3 +81,33 @@ sequenceDiagram
 
     Disp-->>Trigger: {assignments[], escalations[], observability}
     deactivate Disp
+
+%% Flow (L0-L1):
+%% (1) Work items arrive from external triggers (PR opened, commit pushed, alert fired).
+%% (2) Items sit in the L01 WorkQueue, ordered by priority.
+%% (3) A human picks work from a board or backlog. There is no dispatch path — no assignment logic.
+%%
+%% Flow (L2 — agent dispatch):
+%% (1) Platform events arrive as a batch of work items.
+%% (2) The dispatcher opens a root trace span ("dispatch-cycle") and logs the start.
+%% (3) L01 infrastructure: each work item is enqueued into the WorkQueue by priority
+%%     (critical > high > medium > low). The queue size is recorded as a gauge metric.
+%% (4) L03 setup: all available agents are registered in GOVERNANCE's identity layer
+%%     with their declared capabilities and concurrency limits. A capability-scope-check
+%%     security policy is added.
+%% (5) The dispatch loop begins. Items are dequeued in priority order. For each item:
+%%     (a) A child trace span is opened for the assignment.
+%%     (b) The dispatcher runs capability matching: find agents that can handle this work type,
+%%         filter by remaining capacity, pick the one with the lowest current load.
+%%     (c) If an agent is matched, governance.wrap() is called:
+%%         - GOVERNANCE verifies the agent's identity.
+%%         - GOVERNANCE enforces the capability-scope-check policy.
+%%         - The assignment is executed: item.status = "assigned", agent.current_load += 1.
+%%         - GOVERNANCE records the assignment event in its observability layer.
+%%         - The assignment is logged, the assignments counter is incremented, the span closes with OK.
+%%     (d) If no agent is available (no capable agent or all at capacity), the item is escalated.
+%%         The escalations counter is incremented, a warning is logged, GOVERNANCE records the
+%%         escalation, and the span closes with ERROR.
+%% (6) After all items are processed, the root span closes. A histogram records the cycle duration.
+%% (7) The dispatcher returns the full result: assignments made, escalations raised, and the
+%%     complete observability payload (spans, metrics, logs).

@@ -48,3 +48,16 @@ sequenceDiagram
     deactivate L01
 
     Note over H,Obs: No L02 path definitions. No L03 agent infrastructure.<br/>The pipeline does not know or care who wrote the code.
+
+%% Flow (L0-L1 and L2 — identical):
+%% (1) Human (or agent at L2) pushes code to the repository.
+%% (2) L01 Tooling receives the pipeline trigger and opens a trace span.
+%% (3) L01 calls Ruff to lint the target files. Ruff returns pass/fail with error counts.
+%% (4) L01 calls ast.parse + importlib to run module-level test assertions against handler.py.
+%% (5) L01 calls ast.parse to verify all target files produce valid ASTs and resolve exports.
+%% (6) L01 calls the pattern-based security scanner to check for hardcoded secrets, eval(), exec().
+%% (7) L01 closes the pipeline trace span and returns the aggregate result (passed + per-stage detail).
+%% (8) At L0-L1, the human reads the output. At L2, the triggering agent reads the output.
+%%     The pipeline itself is unchanged — same tools, same stages, same result.
+%% (9) No L02 path definition is activated. No L03 HARNESS or GOVERNANCE is involved.
+%%     CI/CD is deterministic infrastructure. It stays on L01 at every maturity level.
