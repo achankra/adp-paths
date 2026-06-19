@@ -44,11 +44,6 @@ async def run_at_l01(pr: dict) -> dict:
     A human reviewer opens the PR, reads the diff, leaves comments.
     No agent involvement. No HARNESS. No GOVERNANCE.
 
-    PEH Ch.14: "At L0, the review path is manual. The human reviewer
-    opens the diff with no context preloaded, no structure, no evidence
-    trail. The quality of the review depends entirely on the reviewer's
-    experience and the time they have available."
-    Companion: github.com/achankra/peh, ch14/pr_review_l01.py
     """
     start = time.time()
 
@@ -94,11 +89,6 @@ async def run_at_l02(pr: dict, options: dict | None = None) -> dict:
     using Python's ast module.
     In live mode: Claude API generates the review.
 
-    PEH Ch.14: "At L2, the review path becomes probabilistic. The
-    agent retrieves context, generates a structured review with
-    evidence, and presents it for human validation. The human is
-    still the decision-maker. The agent does not merge."
-    Companion: github.com/achankra/peh, ch14/pr_review_l02.py
     """
     options = options or {}
     start = time.time()
@@ -109,7 +99,6 @@ async def run_at_l02(pr: dict, options: dict | None = None) -> dict:
     governance = Governance()
 
     # Register agent identity
-    # PEH Ch.3: "Identity is the first gate."
     agent_id = options.get("agent_id", "pr-review-agent-001")
     governance.identity.register(agent_id, {
         "team": pr.get("team", "platform"),
@@ -118,7 +107,6 @@ async def run_at_l02(pr: dict, options: dict | None = None) -> dict:
     })
 
     # Add security policies
-    # PEH Ch.11: "Policy as Code — same policies, human or agent."
     governance.security.add_policy({
         "name": "repo-scope-check",
         "check": _repo_scope_policy,

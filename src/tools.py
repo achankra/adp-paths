@@ -5,14 +5,6 @@ Functional wrappers around Ruff (lint/format), module verification,
 and security scanning. These are the L01 deterministic tools — they
 produce the same result for the same input, every time.
 
-The deterministic fabric is what makes agent-driven paths possible.
-Without it, there is nothing for the agent to submit to.
-
-    "In a majority of failed AI initiatives, the cause wasn't the
-     models themselves. It was the failure of the platform's
-     deterministic fabric."
-    — From IDP to ADP (Weave Intelligence, 2025)
-
 PEH Reference:
     Chapter 8  — CI/CD as a Platform Service (pipeline stages, golden paths)
     Chapter 11 — Policy as Code (security gates, OPA integration)
@@ -45,9 +37,6 @@ def lint(file_paths: list[str], *, fix: bool = False, config: str | None = None)
     so it mirrors exactly what a CI pipeline would do — no library API,
     same binary, same output.
 
-    PEH Ch.8: "The pipeline must be reproducible. Same commit, same
-    config, same result — regardless of who or what triggered it."
-    Companion: github.com/achankra/peh, ch08/pipeline.py
     """
     config_path = config or str(Path(__file__).parent.parent / "ruff.toml")
 
@@ -143,18 +132,12 @@ def run_tests(module_path: str, assertions: list[dict]) -> dict:
     Each assertion is {"description": str, "fn": callable} where fn(module)
     returns True/False. The module is loaded fresh each time.
 
-    PEH Ch.8: "Tests are deterministic gates. The pipeline runs them
-    the same way every time — the output is a function of the code,
-    not the environment."
-    Companion: github.com/achankra/peh, ch08/test_runner.py
     """
     results = []
     pass_count = 0
     fail_count = 0
 
     # Load module from file path
-    # PEH Ch.5: "Evaluate the User Experience" — the module under test
-    # is the platform service endpoint
     mod = _load_module(module_path)
     if mod is None:
         return {
@@ -230,9 +213,6 @@ def build(module_paths: list[str]) -> dict:
     Uses ast.parse for syntax checking and importlib for load verification.
     This is the "build" stage — can the code be compiled and loaded?
 
-    PEH Ch.8: "Build verification is the first gate. If the code
-    doesn't parse, nothing else matters."
-    Companion: github.com/achankra/peh, ch08/build_gate.py
     """
     results = []
     all_passed = True
@@ -281,11 +261,8 @@ def build(module_paths: list[str]) -> dict:
 
 # ── Security Scanner ─────────────────────────────────────────────
 
-# PEH Ch.3: "Securing Platform Access" — these patterns catch the
-# most common security anti-patterns in platform service code.
-# PEH Ch.11: "Policy as Code" — in production these would be OPA
-# policies; here we use regex patterns as a simplified equivalent.
-# Companion: github.com/achankra/peh, ch03/security_scanner.py
+# Security patterns — regex-based detection of common anti-patterns.
+# In production these would be OPA policies.
 
 SECURITY_PATTERNS = [
     {
@@ -355,9 +332,6 @@ def security_scan(file_paths: list[str]) -> dict:
     """
     Scan files for security patterns. Returns structured findings.
 
-    PEH Ch.3: "Every artifact that enters the platform goes through
-    the same security gates — human-authored or agent-authored."
-    Companion: github.com/achankra/peh, ch03/security_gate.py
     """
     findings = []
     critical_count = 0

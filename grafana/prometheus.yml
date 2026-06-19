@@ -1,10 +1,7 @@
 # Prometheus configuration for ADP observability
 #
-# Scrapes the exported prometheus.txt from the ADP demo runner.
-# In production, this would scrape a /metrics endpoint.
-#
-# PEH Ch.4: "Prometheus scrapes /metrics. The format is
-# human-readable and machine-parseable."
+# Scrapes the /metrics endpoint from the ADP demo runner.
+# In production, this would be your platform's metrics endpoint.
 
 global:
   scrape_interval: 15s
@@ -13,14 +10,9 @@ global:
 scrape_configs:
   - job_name: "adp-paths"
     static_configs:
-      - targets: ["host.docker.internal:8080"]
+      # Docker: use host.docker.internal to reach the host machine
+      # Homebrew/local: use localhost directly
+      - targets: ["localhost:8080"]
         labels:
           service: "adp-paths"
           environment: "demo"
-
-  # For file-based metrics (exported by --export-telemetry)
-  # Uncomment and mount the telemetry output directory:
-  # - job_name: "adp-file-metrics"
-  #   file_sd_configs:
-  #     - files:
-  #       - "/telemetry/prometheus.txt"

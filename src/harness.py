@@ -12,11 +12,6 @@ Four components:
     Execution  — Runs analysis (simulated or Claude)
     Evaluation — Assesses result quality, determines next step
 
-    "HARNESS is not a wrapper around a model call. It is the
-     orchestration layer that turns a model call into a governed,
-     observable, auditable platform action."
-    — The Platform Engineer's Handbook, Chapter 14
-
 PEH Reference:
     Chapter 14 — Agentic and AI-Augmented Platforms (HARNESS design,
                  agent orchestration patterns, context retrieval)
@@ -45,9 +40,6 @@ class HarnessContext:
     Reads real files, loads failure signals, and gathers metadata
     that the execution component needs to do its job.
 
-    PEH Ch.14: "The quality of agent output is a function of the
-    quality of the context you feed it."
-    Companion: github.com/achankra/peh, ch14/harness_context.py
     """
 
     async def retrieve(self, input_data: dict) -> dict:
@@ -95,9 +87,6 @@ class HarnessCapability:
     Selects the appropriate model and execution strategy based on
     the change type and available context.
 
-    PEH Ch.14: "Capability selection is routing. The platform
-    decides which model handles which kind of change."
-    Companion: github.com/achankra/peh, ch14/harness_capability.py
     """
 
     async def select(self, context: dict, options: dict | None = None) -> dict:
@@ -135,10 +124,6 @@ class HarnessExecution:
     Live mode sends code to Claude via the anthropic Python SDK
     for structured review or fix generation.
 
-    PEH Ch.14: "The execution component is where the model does
-    its work — but always under HARNESS orchestration and
-    GOVERNANCE control."
-    Companion: github.com/achankra/peh, ch14/harness_execution.py
     """
 
     def __init__(self, simulate: bool = True, model: str | None = None):
@@ -388,9 +373,6 @@ class HarnessEvaluation:
     Assesses the execution result and determines the next step:
     auto-approve, request changes, or escalate to human.
 
-    PEH Ch.14: "Evaluation is the checkpoint. The agent's output
-    is only as good as the evaluation that gates it."
-    Companion: github.com/achankra/peh, ch14/harness_evaluation.py
     """
 
     async def evaluate(self, execution_result: dict, criteria: dict | None = None) -> dict:
@@ -416,9 +398,6 @@ class Harness:
     """
     HARNESS orchestrator. Runs all four components in sequence.
 
-    PEH Ch.14: "Context → Capability → Execution → Evaluation.
-    Every probabilistic and hybrid path follows this sequence."
-    Companion: github.com/achankra/peh, ch14/harness.py
     """
 
     def __init__(self, simulate: bool = True, model: str | None = None):

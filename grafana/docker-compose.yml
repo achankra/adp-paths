@@ -1,18 +1,11 @@
-# ADP Observability Stack — Grafana + Prometheus
+# ADP Observability Stack — Grafana + Prometheus (Docker option)
 #
-# Run:   docker-compose up -d
+# Run:   docker compose up -d
 # Open:  http://localhost:3000 (admin/admin)
-# Stop:  docker-compose down
+# Stop:  docker compose down
 #
-# Prometheus scrapes the /metrics endpoint from the ADP demo runner.
-# Grafana connects to Prometheus as a data source and loads the
-# pre-configured ADP dashboard.
+# For a Homebrew-based setup (no Docker), see grafana/README.md.
 #
-# PEH Ch.4: "Observability is the ability to ask new questions of
-# your system without deploying new code."
-
-version: "3.8"
-
 services:
   prometheus:
     image: prom/prometheus:v2.51.0

@@ -9,10 +9,6 @@ At L2, Dispatch Work is the orchestrator that feeds the other paths.
 It receives work items, matches them to agents based on capability,
 assigns with GOVERNANCE wrapping, and tracks outcomes.
 
-    "At L2, a new path appears — Dispatch Work — where work is
-     assigned to agents rather than picked up by humans."
-    — The Four Levels of Agentic Software Development (Weave, 2025)
-
 Three-layer mapping:
     L01 — WorkQueue: infrastructure for queueing work items
     L02 — Path definition: dispatch typed as probabilistic
@@ -51,9 +47,6 @@ class WorkItem:
     pushed, a scheduled validation, a remediation alert. Each item
     has a type that maps to a platform path.
 
-    PEH Ch.14: "Every agent action starts with a work item. The
-    work item defines the scope, the type, and the constraints."
-    Companion: github.com/achankra/peh, ch14/work_item.py
     """
 
     id: str
@@ -80,9 +73,6 @@ class WorkQueue:
     infrastructure — it exists at L01 regardless of whether agents
     or humans consume from it.
 
-    PEH Ch.8: "The queue is the contract between producer and
-    consumer. It decouples who creates work from who executes it."
-    Companion: github.com/achankra/peh, ch08/work_queue.py
     """
 
     def __init__(self):
@@ -137,9 +127,6 @@ class AgentCapability:
     The dispatcher matches work items to agents based on declared
     capabilities and current load.
 
-    PEH Ch.14: "Agent registration declares what the agent can do
-    and under what constraints. The platform enforces the scope."
-    Companion: github.com/achankra/peh, ch14/agent_registry.py
     """
 
     agent_id: str
@@ -177,9 +164,6 @@ def _match_agent(
 
     Selection criteria: capability match → capacity → lowest load.
 
-    PEH Ch.14: "Capability matching is not round-robin. The dispatcher
-    selects the agent best suited to the work type and scope."
-    Companion: github.com/achankra/peh, ch14/capability_matching.py
     """
     candidates = [
         a for a in agents if a.can_handle(work_item.type) and a.has_capacity()
@@ -200,10 +184,6 @@ async def run_at_l01(work_items: list[dict]) -> dict:
     At L0 and L1, there is no dispatch. Humans pick up work from
     a backlog. The platform queues items but does not assign them.
 
-    PEH Ch.14: "At L0, the 'dispatch' is a human scanning a Kanban
-    board and deciding what to work on next. There is no assignment
-    logic. The queue exists, but the consumer is a person."
-    Companion: github.com/achankra/peh, ch14/dispatch_l01.py
     """
     queue = WorkQueue()
     items = []
@@ -257,10 +237,6 @@ async def run_at_l02(
     selects agents based on capability, enforces scope via GOVERNANCE,
     and records every assignment in the observability layer.
 
-    PEH Ch.14: "At L2, dispatch is a platform path. Work items are
-    typed, agents are registered with capabilities, and the platform
-    matches and assigns with full governance wrapping."
-    Companion: github.com/achankra/peh, ch14/dispatch_l02.py
     """
     options = options or {}
     start = time.time()
@@ -270,7 +246,6 @@ async def run_at_l02(
     obs = ObservabilityStack(service_name="dispatch-work")
 
     # Start root trace span
-    # PEH Ch.4: "Every dispatch cycle is a trace. Every assignment is a span."
     root_span = obs.tracer.start_span("dispatch-cycle", attributes={
         "work_items.count": len(work_items),
     })
@@ -293,8 +268,6 @@ async def run_at_l02(
     obs.metrics.gauge("dispatch_queue_size", queue.size())
 
     # Register available agents
-    # PEH Ch.14: "Agent registration is declarative. The platform
-    # knows what each agent can do before dispatch begins."
     agents = options.get("agents") or [
         AgentCapability(
             agent_id="review-agent-001",

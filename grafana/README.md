@@ -2,16 +2,63 @@
 
 Pre-configured observability stack for the ADP demo runner.
 
-## Quick Start
+## Option A: Homebrew (macOS, no Docker required)
 
 ```bash
-cd grafana
-docker-compose up -d
+brew install grafana prometheus
+```
+
+Start Prometheus and Grafana (run from the `adp_paths/` project root):
+
+```bash
+prometheus --config.file=grafana/prometheus.yml &
+brew services start grafana
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — login `admin` / `admin`.
 
-The **ADP Platform Observability** dashboard loads automatically with three sections:
+Then add the data source and import the dashboard:
+
+1. Go to **Connections → Data sources → Add data source**
+2. Select **Prometheus**, set URL to `http://localhost:9090`, click **Save & test**
+3. Go to **Dashboards → Import**, upload `grafana/dashboards/adp-dashboard.json`
+
+To stop:
+
+```bash
+brew services stop grafana
+# Kill the Prometheus process (or use Ctrl-C if running in foreground)
+pkill prometheus
+```
+
+## Option B: Docker Compose
+
+Requires Docker Desktop (or Docker Engine) to be running.
+
+```bash
+cd grafana
+docker compose up -d
+```
+
+Open [http://localhost:3000](http://localhost:3000) — login `admin` / `admin`.
+
+The data source and dashboard are auto-provisioned. No manual setup needed.
+
+To stop:
+
+```bash
+docker compose down
+```
+
+Add `-v` to also remove stored data:
+
+```bash
+docker compose down -v
+```
+
+## Dashboard
+
+The **ADP Platform Observability** dashboard has three sections:
 
 | Section | Metrics |
 |---------|---------|
@@ -43,16 +90,4 @@ L02 Path Defs     → dispatch_assignments, dispatch_escalations (counters)
                      dispatch_cycle_duration_ms (histogram)
 L03 GOVERNANCE    → governance_events (counter, by action + path)
                      dispatch_governance_denials (counter)
-```
-
-## Stop
-
-```bash
-docker-compose down
-```
-
-Add `-v` to also remove stored data:
-
-```bash
-docker-compose down -v
 ```
