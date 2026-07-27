@@ -14,7 +14,7 @@ Four platform paths, each implemented at two maturity levels:
 |------|-----------|----------------|-------------|
 | `/ci-build` | Deterministic | Human triggers pipeline | Same pipeline, agent may author the code |
 | `/pr-review` | Probabilistic | Human reads diff manually | Agent generates structured review with HARNESS |
-| `/validate-change` | Hybrid | Single gate, human fixes | Agent + gate feedback loop with retry limit |
+| `/iterative-refactor` | Hybrid | Single gate, human fixes | Agent + gate feedback loop with retry limit |
 | `/dispatch-work` | Probabilistic | Human picks from backlog | Platform dispatches work to agents by capability |
 
 The key structural insight: **deterministic paths stay on L01 at every maturity level.** Only probabilistic and hybrid paths activate L02 (path definitions) and L03 (agent infrastructure). Dispatch Work is a *new* path at L2 — it does not exist at L0-L1.
@@ -27,7 +27,7 @@ The key structural insight: **deterministic paths stay on L01 at every maturity 
 L03  Agent Infrastructure    HARNESS (Context, Capability, Execution, Evaluation)
      (only for agent paths)  GOVERNANCE (Identity, Security, Observability)
      ─────────────────────────────────────────────────────────────────────────
-L02  Path Definitions        8 paths to outcomes, each typed as:
+L02  Path Definitions        9 paths to outcomes, each typed as:
                              deterministic | probabilistic | hybrid
      ─────────────────────────────────────────────────────────────────────────
 L01  Tooling (IDP)           CI pipelines, GitOps, observability (traces,
@@ -105,7 +105,7 @@ python -m src.cli --simulate
 # Run a single path
 python -m src.cli --simulate ci-build
 python -m src.cli --simulate pr-review
-python -m src.cli --simulate validate-change
+python -m src.cli --simulate iterative-refactor
 python -m src.cli --simulate dispatch-work
 ```
 
@@ -145,7 +145,7 @@ In `--live` mode, the codebase uses the `anthropic` Python SDK to call Claude at
 
 **`/pr-review` (probabilistic path):** The HARNESS Context component gathers real file content, then the Execution component sends it to Claude with a structured prompt. Claude returns a JSON review with categories (style, correctness, security), findings, and a recommendation. The HARNESS Evaluation component then assesses the result (approve, request-changes, or pending-human-review based on confidence).
 
-**`/validate-change` (hybrid path):** When the deterministic gate fails, the HARNESS sends the structured failure signals (lint errors, security findings) to Claude along with the source file. Claude generates a fix. The fix is written to the working copy, and the deterministic gate runs again. This loop continues until the gate passes or the retry limit is reached.
+**`/iterative-refactor` (hybrid path):** When the deterministic gate fails, the HARNESS sends the structured failure signals (lint errors, security findings) to Claude along with the source file. Claude generates a fix. The fix is written to the working copy, and the deterministic gate runs again. This loop continues until the gate passes or the retry limit is reached.
 
 The default model is `claude-sonnet-4-20250514`. Override with `--model`:
 
@@ -237,7 +237,8 @@ adp_paths/
 │       ├── __init__.py
 │       ├── ci_build.py         # Deterministic — stays on L01
 │       ├── pr_review.py        # Probabilistic — activates L02 + L03 at L2
-│       ├── validate_change.py  # Hybrid — agent + gate loop at L2
+│       ├── iterative_refactor.py # Hybrid — wrapper exposing /iterative-refactor
+│       ├── validate_change.py  # Hybrid — agent + gate loop implementation
 │       └── dispatch_work.py    # Dispatch — NEW at L2, assigns work to agents
 ├── sample/
 │   └── src/
@@ -247,7 +248,7 @@ adp_paths/
 ├── docs/
 │   ├── ci-build.mermaid        # Sequence diagram — /ci-build path
 │   ├── pr-review.mermaid       # Sequence diagram — /pr-review path
-│   ├── validate-change.mermaid # Sequence diagram — /validate-change path
+│   ├── validate-change.mermaid # Sequence diagram — /iterative-refactor path
 │   └── dispatch-work.mermaid   # Sequence diagram — /dispatch-work path
 ├── grafana/
 │   ├── docker-compose.yml      # Grafana + Prometheus stack
@@ -263,7 +264,7 @@ adp_paths/
     ├── test_harness.py         # 15 tests — context, capability, execution, evaluation, flow
     ├── test_observability.py   # 27 tests — spans, tracer, metrics, logger, stack
     ├── test_metrics_server.py  # 6 tests — HTTP server, /metrics endpoint, lifecycle
-    └── test_paths.py           # 23 tests — ci-build, pr-review, validate-change, dispatch-work
+    └── test_paths.py           # 22 tests — ci-build, pr-review, iterative-refactor, dispatch-work
 ```
 
 ---
@@ -271,7 +272,7 @@ adp_paths/
 ## Running Tests
 
 ```bash
-# Run all 92 tests
+# Run all tests
 pytest
 
 # Run with verbose output
@@ -310,7 +311,7 @@ Ruff configuration is in `ruff.toml`. Target version is Python 3.11, line length
 
 **`/pr-review` (probabilistic):** L0-L1 is manual-only (no context, no evidence trail). L2 engages full HARNESS (four components) and GOVERNANCE (identity, security, observability). Agent does not merge.
 
-**`/validate-change` (hybrid):** L0-L1 is a single gate. L2 loops on failure with agent-generated fixes. Retry limit is enforced. Exhaustion triggers human escalation. The deterministic gate (L01 pipeline) is unchanged between levels.
+**`/iterative-refactor` (hybrid):** L0-L1 is a single gate. L2 loops on failure with agent-generated fixes. Retry limit is enforced. Exhaustion triggers human escalation. The deterministic gate (L01 pipeline) is unchanged between levels.
 
 **`/dispatch-work` (dispatch):** Does not exist at L0-L1 (humans pick from backlog, no dispatch logic). At L2, work items are queued by priority, matched to agents by capability, assigned with GOVERNANCE wrapping, and escalated when no capable agent is available. Priority ordering is verified (critical items dispatch first).
 
@@ -324,9 +325,9 @@ Every agent-driven path wraps execution with GOVERNANCE. The three sub-layers �
 
 | Component | Class | What It Does | Paths That Use It |
 |-----------|-------|-------------|-------------------|
-| Identity | `GovernanceIdentity` | `register()` + `verify()` — agent must be registered before execution | /pr-review, /validate-change, /dispatch-work |
-| Security | `GovernanceSecurity` | `add_policy()` + `enforce()` — policy functions checked before every action | /pr-review (repo-scope, no-merge), /validate-change (retry-limit), /dispatch-work (capability-scope) |
-| Observability | `GovernanceObservability` | `record()` + audit trail + metrics + L01 bridge via ObservabilityStack | /pr-review, /validate-change, /dispatch-work |
+| Identity | `GovernanceIdentity` | `register()` + `verify()` — agent must be registered before execution | /pr-review, /iterative-refactor, /dispatch-work |
+| Security | `GovernanceSecurity` | `add_policy()` + `enforce()` — policy functions checked before every action | /pr-review (repo-scope, no-merge), /iterative-refactor (retry-limit), /dispatch-work (capability-scope) |
+| Observability | `GovernanceObservability` | `record()` + audit trail + metrics + L01 bridge via ObservabilityStack | /pr-review, /iterative-refactor, /dispatch-work |
 
 `Governance.wrap()` orchestrates the sequence: verify identity → enforce policies → execute → record. If identity verification fails or any policy denies, the wrapped function never runs.
 
@@ -340,9 +341,9 @@ Agent-driven paths that require probabilistic reasoning use HARNESS to orchestra
 
 | Component | Class | What It Does | Paths That Use It |
 |-----------|-------|-------------|-------------------|
-| Context | `HarnessContext` | Reads real files via `Path.read_text()`, loads failure signals, gathers change metadata | /pr-review (source files, ADRs), /validate-change (failure signals + source) |
-| Capability | `HarnessCapability` | Selects model + strategy based on change type (routine → standard, security-sensitive → deep-scan) | /pr-review, /validate-change |
-| Execution | `HarnessExecution` | Simulate: real AST analysis + pattern matching. Live: Claude API with structured prompts | /pr-review (generate-review), /validate-change (generate-fix) |
+| Context | `HarnessContext` | Reads real files via `Path.read_text()`, loads failure signals, gathers change metadata | /pr-review (source files, ADRs), /iterative-refactor (failure signals + source) |
+| Capability | `HarnessCapability` | Selects model + strategy based on change type (routine → standard, security-sensitive → deep-scan) | /pr-review, /iterative-refactor |
+| Execution | `HarnessExecution` | Simulate: real AST analysis + pattern matching. Live: Claude API with structured prompts | /pr-review (generate-review), /iterative-refactor (generate-fix) |
 | Evaluation | `HarnessEvaluation` | Assesses result quality → auto-approved / request-changes / pending-human-review | /pr-review (always pending-human-review at L2) |
 
 `Harness.run()` chains all four in sequence: Context → Capability → Execution → Evaluation.
@@ -383,6 +384,7 @@ Every module in the codebase includes PEH chapter references in its docstring an
 | `metrics_server.py` | Ch 4 | `ch04/metrics_server.py` |
 | `paths/ci_build.py` | Ch 8 | `ch08/ci_build.py` |
 | `paths/pr_review.py` | Ch 14 | `ch14/pr_review.py` |
+| `paths/iterative_refactor.py` | Ch 4, 11, 13 | Wrapper — delegates to `validate_change.py` |
 | `paths/validate_change.py` | Ch 4, 11, 13 | `ch04/observability.py`, `ch13/feedback_loop.py` |
 | `paths/dispatch_work.py` | Ch 8, 10, 14 | `ch14/dispatch.py`, `ch08/work_queue.py` |
 | `sample/src/handler.py` | Ch 5 | `ch05/handler.py` |
