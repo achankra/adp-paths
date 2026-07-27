@@ -4,5 +4,7 @@ cli
 governance
 harness
 layers
+metrics_server
+observability
 paths
 tools

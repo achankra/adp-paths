@@ -6,6 +6,8 @@ src/cli.py
 src/governance.py
 src/harness.py
 src/layers.py
+src/metrics_server.py
+src/observability.py
 src/tools.py
 src/adp_paths.egg-info/PKG-INFO
 src/adp_paths.egg-info/SOURCES.txt
@@ -15,9 +17,13 @@ src/adp_paths.egg-info/requires.txt
 src/adp_paths.egg-info/top_level.txt
 src/paths/__init__.py
 src/paths/ci_build.py
+src/paths/dispatch_work.py
+src/paths/iterative_refactor.py
 src/paths/pr_review.py
 src/paths/validate_change.py
 tests/test_governance.py
 tests/test_harness.py
+tests/test_metrics_server.py
+tests/test_observability.py
 tests/test_paths.py
 tests/test_tools.py
