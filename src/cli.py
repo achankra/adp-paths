@@ -12,7 +12,7 @@ Usage:
     python -m src.cli --live --model claude-sonnet-4-20250514  # Specific model
     python -m src.cli --simulate ci-build                      # Single path
     python -m src.cli --simulate pr-review
-    python -m src.cli --simulate validate-change
+    python -m src.cli --simulate iterative-refactor
 
 Environment:
     ANTHROPIC_API_KEY  — Required for --live mode
@@ -33,6 +33,7 @@ from pathlib import Path
 from src.metrics_server import MetricsServer
 from src.observability import ObservabilityStack
 from src.paths import ci_build, dispatch_work, pr_review, validate_change
+from src.paths import iterative_refactor
 
 SAMPLE_DIR = Path(__file__).parent.parent / "sample" / "src"
 
@@ -214,8 +215,8 @@ async def demo_pr_review(args, options=None):
     print_summary(l02["summary"])
 
 
-async def demo_validate_change(args, options=None):
-    header("/validate-change — Hybrid Path (at L2)")
+async def demo_iterative_refactor(args, options=None):
+    header("/iterative-refactor — Hybrid Path (at L2)")
 
     sample_files = [
         str(SAMPLE_DIR / "handler.py"),
@@ -225,7 +226,7 @@ async def demo_validate_change(args, options=None):
 
     # L0-L1
     subheader("L0-L1: Single gate")
-    l01 = await validate_change.run_at_l01({"file_paths": sample_files})
+    l01 = await iterative_refactor.run_at_l01({"file_paths": sample_files})
     label("Type", str(l01["type"]))
     label("Layers", layer_chip(l01["layers"]))
     label("Passed", str(l01["pipeline"]["passed"]))
@@ -240,7 +241,7 @@ async def demo_validate_change(args, options=None):
     mode_label = "simulate" if args.simulate else "live"
     subheader(f"L2: Agent + gate feedback loop ({mode_label})")
     l02_opts = {**options, "max_retries": 3, "simulate": args.simulate, "model": args.model}
-    l02 = await validate_change.run_at_l02(
+    l02 = await iterative_refactor.run_at_l02(
         {"file_paths": sample_files},
         l02_opts,
     )
@@ -356,7 +357,7 @@ def main():
     parser.add_argument(
         "path",
         nargs="?",
-        choices=["ci-build", "pr-review", "validate-change", "dispatch-work"],
+        choices=["ci-build", "pr-review", "iterative-refactor", "dispatch-work"],
         help="Run a specific path (default: all paths)",
     )
     parser.add_argument(
@@ -421,7 +422,7 @@ def main():
     runners = {
         "ci-build": demo_ci_build,
         "pr-review": demo_pr_review,
-        "validate-change": demo_validate_change,
+        "iterative-refactor": demo_iterative_refactor,
         "dispatch-work": demo_dispatch_work,
     }
 

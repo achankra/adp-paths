@@ -1,8 +1,8 @@
 """
 Tests for the three platform paths:
-    /ci-build        — Deterministic
-    /pr-review       — Probabilistic
-    /validate-change — Hybrid
+    /ci-build           — Deterministic
+    /pr-review          — Probabilistic
+    /iterative-refactor — Hybrid
 
 All tests use simulate mode (no API calls).
 All tests run against real sample code (sample/src/).
@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from src.paths import ci_build, dispatch_work, pr_review, validate_change
+from src.paths import ci_build, dispatch_work, pr_review, iterative_refactor
 
 SAMPLE_DIR = Path(__file__).parent.parent / "sample" / "src"
 SAMPLE_FILES = [
@@ -142,10 +142,10 @@ class TestPrReview:
         assert gov["observability"]["total_executions"] >= 1
 
 
-# ── /validate-change — Hybrid ────────────────────────────────────
+# ── /iterative-refactor — Hybrid ─────────────────────────────────
 
 
-class TestValidateChange:
+class TestIterativeRefactor:
     """
     The most underestimated shift. Agent + deterministic gate
     in a feedback loop.
@@ -155,8 +155,8 @@ class TestValidateChange:
 
     @pytest.mark.asyncio
     async def test_l01_single_gate(self):
-        result = await validate_change.run_at_l01({"file_paths": SAMPLE_FILES})
-        assert result["path"] == "/validate-change"
+        result = await iterative_refactor.run_at_l01({"file_paths": SAMPLE_FILES})
+        assert result["path"] == "/iterative-refactor"
         assert result["maturity_level"] == "L0-L1"
         assert result["type"] == "gate"
         assert result["attempts"] == 1
@@ -165,13 +165,13 @@ class TestValidateChange:
 
     @pytest.mark.asyncio
     async def test_l01_clean_code_passes(self):
-        result = await validate_change.run_at_l01({"file_paths": SAMPLE_FILES})
+        result = await iterative_refactor.run_at_l01({"file_paths": SAMPLE_FILES})
         assert result["pipeline"]["passed"]
 
     @pytest.mark.asyncio
     async def test_l02_hybrid_loop_simulate(self):
         """With clean code, should pass on first attempt."""
-        result = await validate_change.run_at_l02(
+        result = await iterative_refactor.run_at_l02(
             {"file_paths": SAMPLE_FILES},
             {"max_retries": 3, "simulate": True},
         )
@@ -184,7 +184,7 @@ class TestValidateChange:
 
     @pytest.mark.asyncio
     async def test_l02_loop_trace_exists(self):
-        result = await validate_change.run_at_l02(
+        result = await iterative_refactor.run_at_l02(
             {"file_paths": SAMPLE_FILES},
             {"simulate": True},
         )
@@ -198,7 +198,7 @@ class TestValidateChange:
 
     @pytest.mark.asyncio
     async def test_l02_has_governance(self):
-        result = await validate_change.run_at_l02(
+        result = await iterative_refactor.run_at_l02(
             {"file_paths": SAMPLE_FILES},
             {"simulate": True},
         )
@@ -208,7 +208,7 @@ class TestValidateChange:
 
     @pytest.mark.asyncio
     async def test_l02_resolves_by_first_pass_or_fix(self):
-        result = await validate_change.run_at_l02(
+        result = await iterative_refactor.run_at_l02(
             {"file_paths": SAMPLE_FILES},
             {"simulate": True},
         )
