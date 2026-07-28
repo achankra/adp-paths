@@ -9,3 +9,6 @@ build/
 telemetry/
 grafana/data/
 *.pptx
+.ruff_cache/
+.DS_Store
+.venv/
