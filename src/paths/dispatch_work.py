@@ -28,7 +28,7 @@ from __future__ import annotations
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from src.governance import Governance
 from src.harness import Harness  # noqa: F401 — referenced conceptually
@@ -54,7 +54,7 @@ class WorkItem:
     priority: str = "medium"  # "critical", "high", "medium", "low"
     source: dict = field(default_factory=dict)
     metadata: dict = field(default_factory=dict)
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     # Dispatch state
     assigned_to: str | None = None
@@ -443,7 +443,7 @@ async def _execute_assignment(
 ) -> dict:
     """Execute a single work assignment."""
     item.assigned_to = agent.agent_id
-    item.assigned_at = datetime.now(timezone.utc).isoformat()
+    item.assigned_at = datetime.now(UTC).isoformat()
     item.status = "assigned"
     agent.current_load += 1
 

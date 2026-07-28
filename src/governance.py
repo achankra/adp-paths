@@ -20,12 +20,11 @@ Companion code: github.com/achankra/peh, Chapters 3, 4, 11, 14
 
 from __future__ import annotations
 
-import asyncio
 import inspect
-from datetime import datetime, timezone
-from typing import Any, Callable
+from collections.abc import Callable
+from datetime import UTC, datetime
 
-from src.observability import LogLevel, ObservabilityStack, SpanStatus
+from src.observability import ObservabilityStack, SpanStatus
 
 
 class GovernanceIdentity:
@@ -45,7 +44,7 @@ class GovernanceIdentity:
         self.registered_agents[agent_id] = {
             "id": agent_id,
             "scope": scope,
-            "registered_at": datetime.now(timezone.utc).isoformat(),
+            "registered_at": datetime.now(UTC).isoformat(),
         }
 
     def verify(self, agent_id: str) -> dict:
@@ -60,7 +59,7 @@ class GovernanceIdentity:
             "verified": True,
             "agent_id": agent["id"],
             "scope": agent["scope"],
-            "verified_at": datetime.now(timezone.utc).isoformat(),
+            "verified_at": datetime.now(UTC).isoformat(),
         }
 
 
@@ -108,7 +107,7 @@ class GovernanceSecurity:
             "allowed": all_allowed,
             "policies_checked": len(results),
             "results": results,
-            "enforced_at": datetime.now(timezone.utc).isoformat(),
+            "enforced_at": datetime.now(UTC).isoformat(),
         }
 
 
@@ -139,7 +138,7 @@ class GovernanceObservability:
         """Record an event in the audit trail."""
         self.events.append({
             **event,
-            "recorded_at": datetime.now(timezone.utc).isoformat(),
+            "recorded_at": datetime.now(UTC).isoformat(),
         })
         self.metrics["total_executions"] += 1
 
@@ -167,7 +166,12 @@ class GovernanceObservability:
             )
 
     def get_metrics(self) -> dict:
-        return dict(self.metrics)
+        metrics = dict(self.metrics)
+        total = metrics.get("total_executions", 0)
+        metrics["override_rate"] = (
+            round(metrics.get("overrides", 0) / total, 3) if total else 0.0
+        )
+        return metrics
 
     def get_audit_trail(self) -> list[dict]:
         return list(self.events)

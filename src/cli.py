@@ -7,16 +7,16 @@ showing the structural differences in layer activation, HARNESS
 engagement, and GOVERNANCE tracking.
 
 Usage:
-    python -m src.cli --simulate                              # All paths, local heuristics (default)
+    python -m src.cli --simulate                    # All paths, local heuristics (default)
     python -m src.cli --live                                   # All paths, Claude API
-    python -m src.cli --live --model claude-sonnet-4-20250514  # Specific model
+    python -m src.cli --live --model claude-sonnet-4-5  # Specific model
     python -m src.cli --simulate ci-build                      # Single path
     python -m src.cli --simulate pr-review
     python -m src.cli --simulate iterative-refactor
 
 Environment:
     ANTHROPIC_API_KEY  — Required for --live mode
-    ANTHROPIC_MODEL    — Optional model override (default: claude-sonnet-4-20250514)
+    ANTHROPIC_MODEL    — Optional model override (default: claude-sonnet-4-5)
 
 PEH Reference: The Platform Engineer's Handbook (Chankramath, 2026)
 Companion code: github.com/achankra/peh
@@ -32,8 +32,9 @@ from pathlib import Path
 
 from src.metrics_server import MetricsServer
 from src.observability import ObservabilityStack
-from src.paths import ci_build, dispatch_work, pr_review, validate_change
-from src.paths import iterative_refactor
+from src.paths import ci_build, dispatch_work, iterative_refactor, pr_review
+
+DEFAULT_MODEL = "claude-sonnet-4-5"
 
 SAMPLE_DIR = Path(__file__).parent.parent / "sample" / "src"
 
@@ -88,7 +89,8 @@ def print_pipeline(pipeline: dict | None):
     if not pipeline:
         return
     for stage in pipeline["stages"]:
-        print(f"    {status_icon(stage['passed'])} {stage['name']} ({stage['tool']}) — {stage['output']}")
+        icon = status_icon(stage["passed"])
+        print(f"    {icon} {stage['name']} ({stage['tool']}) — {stage['output']}")
 
 
 def print_summary(summary: dict):
@@ -202,13 +204,19 @@ async def demo_pr_review(args, options=None):
     if l02["governance"]:
         label("  Identity", "Verified" if l02["governance"]["identity"]["verified"] else "FAILED")
         label("  Security", f"{l02['governance']['security']['policies_checked']} policies checked")
-        label("  Observability", f"{l02['governance']['observability']['total_executions']} event(s) recorded")
+        n_events = l02["governance"]["observability"]["total_executions"]
+        label("  Observability", f"{n_events} event(s) recorded")
 
     if l02["review"].get("findings"):
         print(f"\n  {BOLD}Findings:{RESET}")
         for f in l02["review"]["findings"]:
             severity = f.get("severity", "info")
-            color = RED if severity == "critical" else YELLOW if severity in ("error", "warning") else DIM
+            if severity == "critical":
+                color = RED
+            elif severity in ("error", "warning"):
+                color = YELLOW
+            else:
+                color = DIM
             findings_str = ", ".join(f.get("findings", []))
             print(f"    {color}[{severity}]{RESET} {f.get('category', 'general')}: {findings_str}")
 
@@ -218,8 +226,11 @@ async def demo_pr_review(args, options=None):
 async def demo_iterative_refactor(args, options=None):
     header("/iterative-refactor — Hybrid Path (at L2)")
 
+    # refactor_target.py ships with seeded, auto-fixable lint defects so the
+    # feedback loop genuinely loops: gate fails on attempt 1, the agent fixes,
+    # the gate passes on attempt 2. utils.py is the clean control file.
     sample_files = [
-        str(SAMPLE_DIR / "handler.py"),
+        str(SAMPLE_DIR / "refactor_target.py"),
         str(SAMPLE_DIR / "utils.py"),
     ]
     options = options or {}
@@ -325,7 +336,8 @@ async def demo_dispatch_work(args, options=None):
         print(f"\n  {BOLD}Assignments:{RESET}")
         for a in l02["dispatch"]["assignments"]:
             path_target = a.get("target_path", "unknown")
-            print(f"    {GREEN}ASSIGNED{RESET} {a['item_id']} ({a['type']}) → {a['assigned_to']} → {path_target}")
+            assignee = f"{a['assigned_to']} → {path_target}"
+            print(f"    {GREEN}ASSIGNED{RESET} {a['item_id']} ({a['type']}) → {assignee}")
 
     if l02["dispatch"]["escalations"]:
         print(f"\n  {BOLD}Escalations:{RESET}")
@@ -361,6 +373,13 @@ def main():
         help="Run a specific path (default: all paths)",
     )
     parser.add_argument(
+        "--path",
+        dest="path_flag",
+        choices=["ci-build", "pr-review", "iterative-refactor", "dispatch-work"],
+        default=None,
+        help="Alias for the positional path argument",
+    )
+    parser.add_argument(
         "--simulate",
         action="store_true",
         default=True,
@@ -375,7 +394,7 @@ def main():
         "--model",
         type=str,
         default=None,
-        help="Anthropic model name (default: claude-sonnet-4-20250514)",
+        help=f"Anthropic model name (default: {DEFAULT_MODEL})",
     )
     parser.add_argument(
         "--export-telemetry",
@@ -397,11 +416,13 @@ def main():
     )
 
     args = parser.parse_args()
+    if args.path_flag:
+        args.path = args.path_flag
 
     if args.live:
         args.simulate = False
         if not os.environ.get("ANTHROPIC_API_KEY"):
-            print(f"{RED}Error: --live mode requires ANTHROPIC_API_KEY environment variable.{RESET}")
+            print(f"{RED}Error: --live mode requires ANTHROPIC_API_KEY.{RESET}")
             print("  Set it with: export ANTHROPIC_API_KEY=sk-ant-...")
             print("  Or use --simulate mode (default).")
             sys.exit(1)
@@ -413,7 +434,10 @@ def main():
     print("  ║  From IDP to ADP — L0/L1 to L2/L3 Transition Demo          ║")
     print("  ╚══════════════════════════════════════════════════════════════╝")
     print(f"{RESET}")
-    mode = "simulate (local heuristics)" if args.simulate else f"live (Claude API: {args.model or 'claude-sonnet-4-20250514'})"
+    if args.simulate:
+        mode = "simulate (local heuristics)"
+    else:
+        mode = f"live (Claude API: {args.model or DEFAULT_MODEL})"
     print(f"{DIM}  Three-Layer Architecture: L01 Tooling | L02 Paths | L03 Agents")
     print(f"  Mode: {mode}")
     print("  Reference: The Platform Engineer's Handbook (Chankramath, 2026)")

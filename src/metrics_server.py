@@ -9,7 +9,7 @@ so the CLI can serve metrics while executing demos.
 from __future__ import annotations
 
 import threading
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -60,7 +60,7 @@ class MetricsServer:
     def start(self):
         """Start serving /metrics in a background thread."""
         handler = type("Handler", (_MetricsHandler,), {"obs_stack": self.obs_stack})
-        self._httpd = HTTPServer(("0.0.0.0", self.port), handler)
+        self._httpd = HTTPServer(("127.0.0.1", self.port), handler)
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
 

@@ -21,15 +21,16 @@ Companion code: github.com/achankra/peh, Chapters 1, 8, 10, 14
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any
 
 from src.observability import ObservabilityStack, SpanStatus
 
 
-class PathType(str, Enum):
+class PathType(StrEnum):
     """
     Path classification. Every path to outcome is one of these three.
 
@@ -145,7 +146,7 @@ class L01Tooling:
             "pipeline": name,
             "passed": all_passed,
             "stages": results,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         self.telemetry.append(record)

@@ -63,7 +63,7 @@ class TestMetricsServer:
             time.sleep(0.1)
             # Initially empty
             resp = urllib.request.urlopen("http://localhost:19094/metrics")
-            body1 = resp.read().decode()
+            resp.read()  # drain initial (empty) response
 
             # Add metrics after server is running
             obs.metrics.counter("late_metric")

@@ -5,7 +5,6 @@ PEH Reference: Chapters 3, 4, 11, 14
 Companion code: github.com/achankra/peh, ch14/test_governance.py
 """
 
-import asyncio
 
 import pytest
 

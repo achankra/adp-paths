@@ -30,9 +30,9 @@ import os
 import time
 from pathlib import Path
 
-from src.layers import PathType
-from src.harness import Harness
 from src.governance import Governance
+from src.harness import Harness
+from src.layers import PathType
 
 SAMPLE_DIR = Path(__file__).parent.parent.parent / "sample" / "src"
 

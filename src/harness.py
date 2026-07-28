@@ -28,9 +28,8 @@ import json
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 
 
 class HarnessContext:
@@ -46,7 +45,7 @@ class HarnessContext:
         context = {
             "component": "context",
             "retrieved": [],
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
         # Read real files if paths provided
@@ -94,7 +93,7 @@ class HarnessCapability:
         model = (
             options.get("model")
             or os.environ.get("ANTHROPIC_MODEL")
-            or "claude-sonnet-4-20250514"
+            or "claude-sonnet-4-5"
         )
 
         change_meta = next(
@@ -110,7 +109,7 @@ class HarnessCapability:
             "model": model,
             "change_type": change_type,
             "strategy": "deep-scan" if change_type == "security-sensitive" else "standard",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 
@@ -128,7 +127,7 @@ class HarnessExecution:
 
     def __init__(self, simulate: bool = True, model: str | None = None):
         self.simulate = simulate
-        self.model = model or os.environ.get("ANTHROPIC_MODEL") or "claude-sonnet-4-20250514"
+        self.model = model or os.environ.get("ANTHROPIC_MODEL") or "claude-sonnet-4-5"
         self._client = None
 
     def _ensure_client(self):
@@ -172,7 +171,7 @@ class HarnessExecution:
             "raw": text,
             "tokens_used": getattr(response.usage, "output_tokens", 0),
             "duration_ms": int((time.time() - start) * 1000),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     def _run_simulated(self, context: dict, capability: dict, action: str) -> dict:
@@ -192,7 +191,7 @@ class HarnessExecution:
             "action": action,
             "output": output,
             "duration_ms": int((time.time() - start) * 1000),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
     def _build_prompt(self, context: dict, action: str) -> str:
@@ -293,7 +292,10 @@ class HarnessExecution:
                             categories.append({
                                 "category": "correctness",
                                 "severity": "warning",
-                                "findings": [f"{f['path']}: bare except clause (catch specific exceptions)"],
+                                "findings": [
+                                    f"{f['path']}: bare except clause "
+                                    "(catch specific exceptions)"
+                                ],
                             })
                 except SyntaxError as e:
                     categories.append({
@@ -333,10 +335,15 @@ class HarnessExecution:
         has_error = any(c["severity"] == "error" for c in categories)
 
         return {
-            "summary": f"Reviewed {len(files.get('items', [])) if files else 0} file(s). {len(categories)} finding(s).",
+            "summary": (
+                f"Reviewed {len(files.get('items', [])) if files else 0} file(s). "
+                f"{len(categories)} finding(s)."
+            ),
             "categories": categories,
             "recommendation": (
-                "request-changes" if has_critical else "approve-with-comments" if has_error else "approve"
+                "request-changes"
+                if has_critical
+                else ("approve-with-comments" if has_error else "approve")
             ),
             "evidence_trail": True,
         }
@@ -390,7 +397,7 @@ class HarnessEvaluation:
             "recommendation": recommendation,
             "action": action,
             "mode": execution_result.get("mode"),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
 
 
@@ -407,7 +414,12 @@ class Harness:
         self.evaluation = HarnessEvaluation()
         self.options = {"simulate": simulate, "model": model}
 
-    async def run(self, input_data: dict, action: str, evaluation_criteria: dict | None = None) -> dict:
+    async def run(
+        self,
+        input_data: dict,
+        action: str,
+        evaluation_criteria: dict | None = None,
+    ) -> dict:
         ctx = await self.context.retrieve(input_data)
         cap = await self.capability.select(ctx, self.options)
         exec_result = await self.execution.run(ctx, cap, action)
@@ -423,5 +435,5 @@ class Harness:
             },
             "action": eval_result["action"],
             "mode": exec_result["mode"],
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }

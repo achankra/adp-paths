@@ -99,7 +99,7 @@ pip install -r requirements.txt
 Runs all three paths using local heuristics — real Ruff linting, real `ast`-based code analysis, real security scanning. No external API calls.
 
 ```bash
-# Run the full demo (all three paths, L0-L1 then L2)
+# Run the full demo (all four paths, L0-L1 then L2)
 python -m src.cli --simulate
 
 # Run a single path
@@ -107,7 +107,20 @@ python -m src.cli --simulate ci-build
 python -m src.cli --simulate pr-review
 python -m src.cli --simulate iterative-refactor
 python -m src.cli --simulate dispatch-work
+
+# The path can also be passed as a flag (equivalent to the positional form)
+python -m src.cli --simulate --path iterative-refactor
 ```
+
+### The seeded defect (why the refactor demo loops)
+
+`sample/src/refactor_target.py` ships with intentional, auto-fixable lint
+defects (unused imports, unsorted import block). This is deliberate: it makes
+the `/iterative-refactor` demo genuinely loop. At L0-L1 the gate fails and a
+human would have to fix it manually. At L2, attempt 1 fails the gate, the
+agent applies a fix (Ruff `--fix` in simulate mode, Claude in live mode), and
+attempt 2 passes. Do not clean the file up — its defects are the demo. Restore
+it any time with `git checkout -- sample/`.
 
 ### Live mode (requires Anthropic API key)
 
@@ -116,11 +129,11 @@ Uses Claude to generate PR reviews and code fixes. Set your API key first:
 ```bash
 export ANTHROPIC_API_KEY="sk-ant-..."
 
-# Run with default model (claude-sonnet-4-20250514)
+# Run with default model (claude-sonnet-4-5)
 python -m src.cli --live
 
 # Run with a specific model
-python -m src.cli --live --model claude-sonnet-4-20250514
+python -m src.cli --live --model claude-sonnet-4-5
 
 # Run a single path in live mode
 python -m src.cli --live pr-review
@@ -132,7 +145,7 @@ If installed with `pip install -e .`, the `adp-demo` command is available:
 
 ```bash
 adp-demo --simulate
-adp-demo --live --model claude-sonnet-4-20250514
+adp-demo --live --model claude-sonnet-4-5
 ```
 
 ---
@@ -147,10 +160,10 @@ In `--live` mode, the codebase uses the `anthropic` Python SDK to call Claude at
 
 **`/iterative-refactor` (hybrid path):** When the deterministic gate fails, the HARNESS sends the structured failure signals (lint errors, security findings) to Claude along with the source file. Claude generates a fix. The fix is written to the working copy, and the deterministic gate runs again. This loop continues until the gate passes or the retry limit is reached.
 
-The default model is `claude-sonnet-4-20250514`. Override with `--model`:
+The default model is `claude-sonnet-4-5`. Override with `--model`:
 
 ```bash
-python -m src.cli --live --model claude-sonnet-4-20250514
+python -m src.cli --live --model claude-sonnet-4-5
 ```
 
 You can also set `ANTHROPIC_MODEL` as an environment variable. The model selection is handled by the HARNESS Capability component, which can vary the model based on change type (security-sensitive changes may warrant a different strategy).
@@ -219,6 +232,7 @@ The dashboard has three sections mapped to the three-layer architecture: L01 Pip
 
 ```
 adp_paths/
+├── LICENSE                     # MIT
 ├── pyproject.toml              # Project config, author, dependencies, entry points
 ├── requirements.txt            # Flat dependency list
 ├── ruff.toml                   # Ruff linter rules (same config the pipeline enforces)
@@ -244,7 +258,8 @@ adp_paths/
 │   └── src/
 │       ├── __init__.py
 │       ├── handler.py          # Platform API handler (the code pipelines operate on)
-│       └── utils.py            # Platform utilities (validation, formatting, sanitization)
+│       ├── utils.py            # Platform utilities (validation, formatting, sanitization)
+│       └── refactor_target.py  # Seeded lint defects — makes /iterative-refactor loop
 ├── docs/
 │   ├── ci-build.mermaid        # Sequence diagram — /ci-build path
 │   ├── pr-review.mermaid       # Sequence diagram — /pr-review path
