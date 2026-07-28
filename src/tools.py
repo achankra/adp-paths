@@ -22,9 +22,7 @@ import os
 import re
 import subprocess
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
-
 
 # ── Lint (Ruff) ──────────────────────────────────────────────────
 
@@ -71,7 +69,9 @@ def lint(file_paths: list[str], *, fix: bool = False, config: str | None = None)
     cmd.extend(file_paths)
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(  # noqa: S603 — fixed argv, no user input, shell=False
+            cmd, capture_output=True, text=True, timeout=30,
+        )
     except FileNotFoundError:
         return {
             "tool": "ruff",

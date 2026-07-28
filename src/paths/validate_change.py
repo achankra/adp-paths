@@ -30,13 +30,12 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
-import time
 from pathlib import Path
 
-from src.layers import L01Tooling, PathType
-from src.harness import Harness
-from src.governance import Governance
 from src import tools
+from src.governance import Governance
+from src.harness import Harness
+from src.layers import L01Tooling, PathType
 
 SAMPLE_DIR = Path(__file__).parent.parent.parent / "sample" / "src"
 
@@ -245,8 +244,8 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
         governed = await governance.wrap(
             agent_id,
             {"path": "/validate-change", "action": "generate-fix"},
-            lambda: _generate_fix(
-                harness, target_files, lint_errors, failed_stages, simulate
+            lambda errs=lint_errors, stages=failed_stages: _generate_fix(
+                harness, target_files, errs, stages, simulate
             ),
         )
 
@@ -308,7 +307,7 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
             "l01": "Deterministic gate executed on each attempt (real Ruff, real security scan)",
             "l02": "Path defined as hybrid — agent + gate feedback loop",
             "l03": (
-                f"HARNESS generated {sum(1 for l in loop_trace if l.get('fix'))} fix(es). "
+                f"HARNESS generated {sum(1 for e in loop_trace if e.get('fix'))} fix(es). "
                 f"GOVERNANCE tracked {final_result['attempts']} attempt(s). "
                 f"Final status: {final_result['status']}."
             ),

@@ -7,8 +7,6 @@ PEH Reference: Chapter 14 (Agentic Platforms)
 Companion code: github.com/achankra/peh, ch14/test_harness.py
 """
 
-import os
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -141,7 +139,10 @@ class TestHarnessExecution:
         context = {
             "retrieved": [
                 {"source": "failure-signals", "items": [{"code": "F401"}, {"code": "E501"}]},
-                {"source": "files", "items": [{"path": "test.py", "content": "x = 1\n", "lines": 1}]},
+                {
+                    "source": "files",
+                    "items": [{"path": "test.py", "content": "x = 1\n", "lines": 1}],
+                },
             ],
         }
         capability = {"model": "local-heuristic"}

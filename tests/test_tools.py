@@ -13,8 +13,6 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from src import tools
 
 SAMPLE_DIR = Path(__file__).parent.parent / "sample" / "src"

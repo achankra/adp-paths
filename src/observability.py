@@ -23,16 +23,15 @@ import secrets
 import string
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
-
 
 # ── Tracer — OpenTelemetry-Compatible Spans ─────────────────────
 
 
-class SpanStatus(str, Enum):
+class SpanStatus(StrEnum):
     """Span completion status — mirrors OpenTelemetry StatusCode."""
 
     OK = "ok"
@@ -71,7 +70,7 @@ class Span:
         """Add a timestamped event to the span."""
         self.events.append({
             "name": name,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "attributes": attributes or {},
         })
 
@@ -168,7 +167,7 @@ class MetricPoint:
     type: str  # counter, gauge, histogram
     value: float
     labels: dict[str, str] = field(default_factory=dict)
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class Metrics:
@@ -199,7 +198,12 @@ class Metrics:
         key = self._key(name, labels)
         self._counters[key] = self._counters.get(key, 0) + value
         self._labels[key] = labels or {}
-        self._points.append(MetricPoint(name=name, type="counter", value=self._counters[key], labels=labels or {}))
+        self._points.append(
+            MetricPoint(
+                name=name, type="counter",
+                value=self._counters[key], labels=labels or {},
+            )
+        )
 
     def gauge(self, name: str, value: float, labels: dict[str, str] | None = None):
         """Set a gauge to a specific value."""
@@ -213,7 +217,9 @@ class Metrics:
         key = self._key(name, labels)
         self._histograms.setdefault(key, []).append(value)
         self._labels[key] = labels or {}
-        self._points.append(MetricPoint(name=name, type="histogram", value=value, labels=labels or {}))
+        self._points.append(
+            MetricPoint(name=name, type="histogram", value=value, labels=labels or {})
+        )
 
     def get_counter(self, name: str, labels: dict[str, str] | None = None) -> float:
         """Get current counter value."""
@@ -264,7 +270,10 @@ class Metrics:
         return {
             "counters": dict(self._counters),
             "gauges": dict(self._gauges),
-            "histograms": {k: {"count": len(v), "sum": sum(v), "values": v} for k, v in self._histograms.items()},
+            "histograms": {
+                k: {"count": len(v), "sum": sum(v), "values": v}
+                for k, v in self._histograms.items()
+            },
         }
 
     def reset(self):
@@ -279,7 +288,7 @@ class Metrics:
 # ── Structured Logger — JSON Event Logs ─────────────────────────
 
 
-class LogLevel(str, Enum):
+class LogLevel(StrEnum):
     """Log severity levels."""
 
     DEBUG = "debug"
@@ -324,7 +333,7 @@ class StructuredLogger:
         entry = LogEntry(
             level=level,
             message=message,
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             context={"service": self.service_name, **context},
         )
         self._entries.append(entry)
@@ -387,7 +396,7 @@ class ObservabilityStack:
         """
         data = {
             "service": self.service_name,
-            "exported_at": datetime.now(timezone.utc).isoformat(),
+            "exported_at": datetime.now(UTC).isoformat(),
             "traces": self.tracer.export_json(),
             "metrics": self.metrics.export_json(),
             "logs": self.logger.export_json(),

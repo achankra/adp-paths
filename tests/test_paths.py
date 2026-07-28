@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from src.paths import ci_build, dispatch_work, pr_review, iterative_refactor
+from src.paths import ci_build, dispatch_work, iterative_refactor, pr_review
 
 SAMPLE_DIR = Path(__file__).parent.parent / "sample" / "src"
 SAMPLE_FILES = [
