@@ -21,6 +21,39 @@ The key structural insight: **deterministic paths stay on L01 at every maturity 
 
 ---
 
+## Reading the Paper Alongside This Repo
+
+This codebase is the companion to the *ADP in Action* paper. If you arrived from
+the paper, this is how its concepts land in code:
+
+| In the paper | In this repo |
+|---|---|
+| Figure-1: three layers (Tooling / Path Definitions / Agent Infrastructure) | `src/layers.py` (L01), `src/paths/` (L02), `src/harness.py` + `src/governance.py` (L03) |
+| Listing 1 — `/ci-build`, deterministic | `src/paths/ci_build.py` (`run_at_l01` / `run_at_l02`) |
+| Listing 2 — `/pr-review`, probabilistic | `src/paths/pr_review.py` |
+| Listing 3 — `/iterative-refactor`, hybrid | `src/paths/iterative_refactor.py` → `src/paths/validate_change.py` |
+| "What changes at each maturity level" table | every path exposes `run_at_l01()` (maturity L0-L1) and `run_at_l02()` (maturity L2) |
+| Harness (context, capability, execution, evaluation) | `src/harness.py` |
+| Governance (identity, security, observability) | `src/governance.py`, `src/observability.py` |
+| The feedback-loop metrics (override rate, fix-on-first-attempt) | `Governance.observability.get_metrics()`, plus `resolved_by` in loop results |
+| "Running the Code" section | `python3 -m src.cli --simulate --path iterative-refactor` (add `--step` to pace the output) |
+
+Two scope notes the paper implies but the code makes explicit:
+
+- **Paths.** The paper defines nine lifecycle paths. This repo implements four
+  platform commands that demonstrate the three path types across those
+  lifecycle paths: `/ci-build` (deterministic), `/pr-review` (probabilistic),
+  `/iterative-refactor` (hybrid), and `/dispatch-work` (the path that is new at
+  L2). Retrieve Context appears as the Harness Context component rather than a
+  standalone command; deploy, observe, remediate, and secure are out of scope
+  for the demo.
+- **Models.** The paper's third Agent Infrastructure component (providers,
+  inference endpoints, model hosting) appears here only as model selection in
+  the Harness Capability component (`--model` / `ANTHROPIC_MODEL`). Full model
+  provisioning is platform-specific and out of scope for the demo.
+
+---
+
 ## Three-Layer Architecture
 
 ```
@@ -387,8 +420,12 @@ Deterministic paths (`/ci-build`) do not use HARNESS — there is no probabilist
 
 ## References
 
-1. *[The Four Levels of Agentic Software Development in the Enterprise](https://weaveintelligence.io/research/the-four-levels-of-agentic-software-development-in-the-enterprise).* Weave Intelligence, 2025.
-2. *[From IDP to ADP: Why Platform Engineers Now Build Agentic Development Platforms](https://weaveintelligence.io/blog/from-idp-to-adp).* Weave Intelligence, 2025.
+As cited in the *ADP in Action* paper:
+
+1. von Grünberg, K. and Galante, L. *Thinking in Platforms: Platform engineering as the operating model for work in the AI era.* Weave Intelligence, 2026. ISBN 978-3-9828877-0-8.
+2. *[The Four Levels of Agentic Software Development in the Enterprise](https://weaveintelligence.io/research/the-four-levels-of-agentic-software-development-in-the-enterprise).* Weave Intelligence, 2025.
+3. *[From IDP to ADP: Why Platform Engineers Now Build Agentic Development Platforms](https://weaveintelligence.io/blog/from-idp-to-adp).* Weave Intelligence, 2025.
+4. Chankramath, A. *The Platform Engineer's Handbook.* Packt, 2026. ISBN 978-1-80638-013-8.
 
 ---
 
