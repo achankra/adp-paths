@@ -3,9 +3,6 @@ Platform Utility Functions
 
 Input validation, response formatting, and input sanitization.
 Used across platform service endpoints.
-
-PEH Reference: Chapter 3 (Securing Platform Access)
-Companion code: github.com/achankra/peh, ch03/utils.py
 """
 
 from __future__ import annotations

@@ -71,7 +71,7 @@ The **ADP Platform Observability** dashboard has three sections:
 Run the demo with `--export-telemetry` to produce files Prometheus can scrape:
 
 ```bash
-python -m src.cli --simulate --export-telemetry ./telemetry
+python3 -m src.cli --simulate --export-telemetry ./telemetry
 ```
 
 This writes four files to `./telemetry/`:

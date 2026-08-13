@@ -37,7 +37,6 @@ L01  Tooling (IDP)           CI pipelines, GitOps, observability (traces,
 
 GOVERNANCE.Observability (L03) bridges to L01 observability infrastructure — agent events emit to the same traces, metrics, and structured logs that pipelines use.
 
-For the L01 foundation -- Kubernetes runtime, GitOps, CI/CD pipelines, observability, policy-as-code -- see [*The Platform Engineer's Handbook*](https://peh-packt.platformetrics.com/) (Chankramath, Packt, 2026, ISBN 978-1-80638-013-8) and the companion repository at [github.com/achankra/peh](https://github.com/achankra/peh).
 
 ---
 
@@ -74,20 +73,20 @@ python3 --version
 cd adp_paths
 
 # Install with dev dependencies (Ruff + pytest)
-pip install -e ".[dev]"
+python3 -m pip install -e ".[dev]"
 ```
 
 ### Install with Claude API support (live mode)
 
 ```bash
 # Install everything including the anthropic SDK
-pip install -e ".[all]"
+python3 -m pip install -e ".[all]"
 ```
 
 ### Install dependencies only (no editable install)
 
 ```bash
-pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
 ---
@@ -100,16 +99,19 @@ Runs all three paths using local heuristics — real Ruff linting, real `ast`-ba
 
 ```bash
 # Run the full demo (all four paths, L0-L1 then L2)
-python -m src.cli --simulate
+python3 -m src.cli --simulate
 
 # Run a single path
-python -m src.cli --simulate ci-build
-python -m src.cli --simulate pr-review
-python -m src.cli --simulate iterative-refactor
-python -m src.cli --simulate dispatch-work
+python3 -m src.cli --simulate ci-build
+python3 -m src.cli --simulate pr-review
+python3 -m src.cli --simulate iterative-refactor
+python3 -m src.cli --simulate dispatch-work
 
 # The path can also be passed as a flag (equivalent to the positional form)
-python -m src.cli --simulate --path iterative-refactor
+python3 -m src.cli --simulate --path iterative-refactor
+
+# Demo pacing: pause for Enter between output sections instead of scrolling past
+python3 -m src.cli --simulate --step iterative-refactor
 ```
 
 ### The seeded defect (why the refactor demo loops)
@@ -130,18 +132,18 @@ Uses Claude to generate PR reviews and code fixes. Set your API key first:
 export ANTHROPIC_API_KEY="sk-ant-..."
 
 # Run with default model (claude-sonnet-4-5)
-python -m src.cli --live
+python3 -m src.cli --live
 
 # Run with a specific model
-python -m src.cli --live --model claude-sonnet-4-5
+python3 -m src.cli --live --model claude-sonnet-4-5
 
 # Run a single path in live mode
-python -m src.cli --live pr-review
+python3 -m src.cli --live pr-review
 ```
 
 ### Using the entry point
 
-If installed with `pip install -e .`, the `adp-demo` command is available:
+If installed with `python3 -m pip install -e .`, the `adp-demo` command is available:
 
 ```bash
 adp-demo --simulate
@@ -163,7 +165,7 @@ In `--live` mode, the codebase uses the `anthropic` Python SDK to call Claude at
 The default model is `claude-sonnet-4-5`. Override with `--model`:
 
 ```bash
-python -m src.cli --live --model claude-sonnet-4-5
+python3 -m src.cli --live --model claude-sonnet-4-5
 ```
 
 You can also set `ANTHROPIC_MODEL` as an environment variable. The model selection is handled by the HARNESS Capability component, which can vary the model based on change type (security-sensitive changes may warrant a different strategy).
@@ -187,8 +189,8 @@ GOVERNANCE.Observability (L03) emits to this L01 infrastructure when an Observab
 Run with `--serve-metrics` to start an HTTP server that exposes a Prometheus-compatible `/metrics` endpoint:
 
 ```bash
-python -m src.cli --simulate --serve-metrics
-python -m src.cli --simulate --serve-metrics --metrics-port 9090
+python3 -m src.cli --simulate --serve-metrics
+python3 -m src.cli --simulate --serve-metrics --metrics-port 9090
 ```
 
 The server runs in a background thread. After all demos complete, it stays alive for Prometheus scraping until you press Ctrl+C.
@@ -196,7 +198,7 @@ The server runs in a background thread. After all demos complete, it stays alive
 ### Exporting Telemetry
 
 ```bash
-python -m src.cli --simulate --export-telemetry ./telemetry
+python3 -m src.cli --simulate --export-telemetry ./telemetry
 ```
 
 This writes four files: `traces.json`, `metrics.json`, `logs.json`, and `prometheus.txt`.
@@ -239,7 +241,7 @@ adp_paths/
 ├── README.md
 ├── src/
 │   ├── __init__.py
-│   ├── __main__.py             # Package entry point (python -m src.cli)
+│   ├── __main__.py             # Package entry point (python3 -m src.cli)
 │   ├── cli.py                  # CLI runner — argparse, ANSI output, asyncio.run()
 │   ├── tools.py                # L01 deterministic tools (Ruff, test runner, build, security)
 │   ├── layers.py               # Three-layer architecture (L01, L02, L03)
@@ -281,6 +283,20 @@ adp_paths/
     ├── test_metrics_server.py  # 6 tests — HTTP server, /metrics endpoint, lifecycle
     └── test_paths.py           # 22 tests — ci-build, pr-review, iterative-refactor, dispatch-work
 ```
+
+---
+
+## Troubleshooting
+
+**`FAIL lint (ruff)` with a "Ruff not installed" message** — you installed with
+`python3 -m pip install -e .` (which has no base dependencies). Install the dev extras:
+`python3 -m pip install -e ".[dev]"`. The demo also falls back to `python3 -m ruff` when
+the binary isn't on PATH, so a plain `python3 -m pip install ruff` in the same
+environment works too.
+
+**Lint gate fails with "unparseable output"** — Ruff ran but couldn't be
+parsed (usually a config or version mismatch). The gate fails closed by
+design; the stderr tail is included in the stage output.
 
 ---
 
@@ -369,50 +385,10 @@ Deterministic paths (`/ci-build`) do not use HARNESS — there is no probabilist
 
 ---
 
-## PEH Chapter Mapping
-
-For the L01 foundation -- Kubernetes runtime, GitOps, CI/CD pipelines, observability, policy-as-code -- see *The Platform Engineer's Handbook* and the companion repository at [github.com/achankra/peh](https://github.com/achankra/peh). The following chapters map directly to ADP layers:
-
-| ADP Layer | PEH Chapters | What They Build |
-|-----------|-------------|-----------------|
-| L01 Tooling | Ch 1: Laying the Groundwork | Repository topology, CI, testing, security principles |
-| | Ch 2: Scalable Platform Runtime | Kubernetes, service mesh, GitOps, deployment pipelines |
-| | Ch 3: Securing Platform Access | OAuth, RBAC, policy-as-code with OPA |
-| | Ch 4: Embedding Observability | Metrics, logs, traces, OpenTelemetry, SLOs |
-| | Ch 8: CI/CD as a Platform Service | Pipeline playbooks, reusable workflows, golden paths |
-| | Ch 9: Self-Service Infrastructure | Infrastructure blueprints, governance with guardrails |
-| | Ch 11: Compliance and Policy as Code | Admission controllers, OPA, compliance dashboards |
-| L02 Paths | Ch 8, Ch 10 | Golden paths, pipeline templates, starter kits |
-| L03 Agents | Ch 14: Agentic and AI-Augmented Platforms | Agent design, governance, patterns and antipatterns |
-
-### Module-to-Chapter Mapping
-
-Every module in the codebase includes PEH chapter references in its docstring and inline comments. The code style follows the conventions in the PEH companion repository at [github.com/achankra/peh](https://github.com/achankra/peh).
-
-| Module | PEH Chapters | Companion Path |
-|--------|-------------|----------------|
-| `tools.py` | Ch 3, 8, 11 | `ch08/pipeline.py`, `ch03/security_scanner.py` |
-| `layers.py` | Ch 1, 2, 8, 9, 10, 14 | `ch08/`, `ch14/layers.py` |
-| `harness.py` | Ch 14 | `ch14/harness.py` |
-| `governance.py` | Ch 3, 4, 11, 14 | `ch03/identity.py`, `ch14/governance.py` |
-| `observability.py` | Ch 4, 14 | `ch04/observability.py`, `ch04/tracer.py` |
-| `metrics_server.py` | Ch 4 | `ch04/metrics_server.py` |
-| `paths/ci_build.py` | Ch 8 | `ch08/ci_build.py` |
-| `paths/pr_review.py` | Ch 14 | `ch14/pr_review.py` |
-| `paths/iterative_refactor.py` | Ch 4, 11, 13 | Wrapper — delegates to `validate_change.py` |
-| `paths/validate_change.py` | Ch 4, 11, 13 | `ch04/observability.py`, `ch13/feedback_loop.py` |
-| `paths/dispatch_work.py` | Ch 8, 10, 14 | `ch14/dispatch.py`, `ch08/work_queue.py` |
-| `sample/src/handler.py` | Ch 5 | `ch05/handler.py` |
-| `sample/src/utils.py` | Ch 3 | `ch03/utils.py` |
-
----
-
 ## References
 
 1. *[The Four Levels of Agentic Software Development in the Enterprise](https://weaveintelligence.io/research/the-four-levels-of-agentic-software-development-in-the-enterprise).* Weave Intelligence, 2025.
 2. *[From IDP to ADP: Why Platform Engineers Now Build Agentic Development Platforms](https://weaveintelligence.io/blog/from-idp-to-adp).* Weave Intelligence, 2025.
-3. Chankramath, A. *The Platform Engineer's Handbook.* Packt, 2026. ISBN 978-1-80638-013-8. [Book website](https://peh-packt.platformetrics.com/) · [Amazon](https://www.amazon.com/Platform-Engineers-Handbook-developer-focused-streamline-ebook/dp/B0FR59Z7Q2/)
-4. Companion repository: [github.com/achankra/peh](https://github.com/achankra/peh)
 
 ---
 

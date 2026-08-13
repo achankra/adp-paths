@@ -8,12 +8,6 @@ Three components that provide structured observability across the platform:
 
 This is L01 infrastructure. GOVERNANCE.Observability (L03) wraps this
 for agent-specific events.
-
-PEH Reference:
-    Chapter 4  — Embedding Observability (OpenTelemetry, metrics, traces)
-    Chapter 14 — Agentic Platforms (agent telemetry, audit trails)
-
-Companion code: github.com/achankra/peh, ch04/observability.py
 """
 
 from __future__ import annotations

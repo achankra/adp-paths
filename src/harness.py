@@ -12,11 +12,8 @@ Four components:
     Execution  — Runs analysis (simulated or Claude)
     Evaluation — Assesses result quality, determines next step
 
-PEH Reference:
-    Chapter 14 — Agentic and AI-Augmented Platforms (HARNESS design,
                  agent orchestration patterns, context retrieval)
 
-Companion code: github.com/achankra/peh, ch14/harness.py
 
 Reference: "The Four Levels of Agentic Software Development" (Weave, 2025)
 """
@@ -139,7 +136,7 @@ class HarnessExecution:
             self._client = anthropic.Anthropic()
         except ImportError as e:
             raise RuntimeError(
-                "anthropic SDK not available. Install with: pip install anthropic\n"
+                "anthropic SDK not available. Install with: python3 -m pip install -e '.[live]'\n"
                 "Or use --simulate mode."
             ) from e
 

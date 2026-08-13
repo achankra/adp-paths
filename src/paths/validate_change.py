@@ -15,14 +15,6 @@ This implementation uses REAL tools:
 The deterministic gate (L01 pipeline) never changes.
 The agent gets structured failure signals, not raw log output.
 There is always a retry limit and human escalation.
-
-PEH Reference:
-    Chapter 4  — Embedding Observability (telemetry, structured signals)
-    Chapter 11 — Policy as Code (automated policy gates)
-    Chapter 13 — Resilience Automation (feedback loops, retry patterns)
-
-Companion code: github.com/achankra/peh, ch04/observability.py,
-                ch11/policy_gate.py, ch13/feedback_loop.py
 """
 
 from __future__ import annotations
@@ -74,7 +66,8 @@ def _make_lint_stage(target_files):
             "output": (
                 f"No lint errors ({result['files_checked']} file(s) checked)"
                 if result["passed"]
-                else f"{result['error_count']} error(s), {result['warning_count']} warning(s)"
+                else result.get("error")
+                or f"{result['error_count']} error(s), {result['warning_count']} warning(s)"
             ),
             "detail": result,
         }

@@ -7,16 +7,6 @@ L02 — Path Definitions: The eight paths to outcomes. Each typed as
       deterministic, probabilistic, or hybrid.
 L03 — Agent Infrastructure: HARNESS (Context, Capability, Execution,
       Evaluation) and GOVERNANCE (Identity, Security, Observability).
-
-PEH Reference:
-    Chapter 1  — Groundwork (platform foundations)
-    Chapter 2  — Kubernetes/Runtime (L01 infrastructure)
-    Chapter 8  — CI/CD as a Platform Service (L01 pipelines)
-    Chapter 9  — Infrastructure as Code (L01 provisioning)
-    Chapter 10 — Starter Kits and Golden Paths (L02 path definitions)
-    Chapter 14 — Agentic and AI-Augmented Platforms (L03 agent infra)
-
-Companion code: github.com/achankra/peh, Chapters 1, 8, 10, 14
 """
 
 from __future__ import annotations

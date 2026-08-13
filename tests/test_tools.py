@@ -4,9 +4,6 @@ Tests for src/tools.py — L01 deterministic pipeline tools.
 All tests use real files (the sample code under sample/src/).
 No mocks, no simulations. The tools are deterministic — same
 input, same result.
-
-PEH Reference: Chapter 8 (CI/CD as a Platform Service)
-Companion code: github.com/achankra/peh, ch08/test_tools.py
 """
 
 import os

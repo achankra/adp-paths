@@ -3,9 +3,6 @@ Tests for src/observability.py — L01 Observability Infrastructure.
 
 Three pillars: Tracer (spans), Metrics (counters/gauges/histograms),
 StructuredLogger (JSON events). Plus the unified ObservabilityStack.
-
-PEH Reference: Chapter 4 (Embedding Observability)
-Companion code: github.com/achankra/peh, ch04/test_observability.py
 """
 
 import json
@@ -28,7 +25,7 @@ from src.observability import (
 
 
 class TestSpan:
-    """PEH Ch.4: 'A trace is a tree of spans.'"""
+    """'A trace is a tree of spans.'"""
 
     def test_span_defaults(self):
         span = Span(name="test-span")
@@ -75,7 +72,7 @@ class TestSpan:
 
 
 class TestTracer:
-    """PEH Ch.4: 'The tracer is the entry point.'"""
+    """'The tracer is the entry point.'"""
 
     def test_start_and_end_span(self):
         tracer = Tracer(service_name="test-svc")
@@ -119,7 +116,7 @@ class TestTracer:
 
 
 class TestMetrics:
-    """PEH Ch.4: 'Metrics answer how much and how fast.'"""
+    """'Metrics answer how much and how fast.'"""
 
     def test_counter_increments(self):
         m = Metrics()
@@ -183,7 +180,7 @@ class TestMetrics:
 
 
 class TestStructuredLogger:
-    """PEH Ch.4: 'Structured logs are queryable events.'"""
+    """'Structured logs are queryable events.'"""
 
     def test_log_levels(self):
         logger = StructuredLogger()
@@ -229,7 +226,7 @@ class TestStructuredLogger:
 
 
 class TestObservabilityStack:
-    """PEH Ch.4: 'The three pillars are complementary views.'"""
+    """'The three pillars are complementary views.'"""
 
     def test_stack_has_all_components(self):
         obs = ObservabilityStack(service_name="test")

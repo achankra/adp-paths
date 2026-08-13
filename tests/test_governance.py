@@ -1,8 +1,5 @@
 """
 Tests for src/governance.py — GOVERNANCE control layer.
-
-PEH Reference: Chapters 3, 4, 11, 14
-Companion code: github.com/achankra/peh, ch14/test_governance.py
 """
 
 
@@ -17,7 +14,7 @@ from src.governance import (
 
 
 class TestGovernanceIdentity:
-    """PEH Ch.3: 'Identity is the first gate.'"""
+    """'Identity is the first gate.'"""
 
     def test_register_and_verify(self):
         identity = GovernanceIdentity()
@@ -35,7 +32,7 @@ class TestGovernanceIdentity:
 
 
 class TestGovernanceSecurity:
-    """PEH Ch.11: 'Policy as Code — same policies, human or agent.'"""
+    """'Policy as Code — same policies, human or agent.'"""
 
     @pytest.mark.asyncio
     async def test_allow_when_no_policies(self):
@@ -84,7 +81,7 @@ class TestGovernanceSecurity:
 
 
 class TestGovernanceObservability:
-    """PEH Ch.4: 'Observability is the ability to ask new questions.'"""
+    """'Observability is the ability to ask new questions.'"""
 
     def test_record_and_get_metrics(self):
         obs = GovernanceObservability()

@@ -2,9 +2,6 @@
 Tests for src/harness.py — HARNESS agent execution orchestrator.
 
 All tests use simulate mode (no API calls, no cost).
-
-PEH Reference: Chapter 14 (Agentic Platforms)
-Companion code: github.com/achankra/peh, ch14/test_harness.py
 """
 
 from pathlib import Path

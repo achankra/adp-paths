@@ -16,12 +16,6 @@ HARNESS components activated at L2:
     Capability — Selects review model by change type
     Execution  — Generates structured review with evidence
     Evaluation — Human validates. Agent does not merge.
-
-PEH Reference:
-    Chapter 3  — Securing Platform Access (RBAC, identity)
-    Chapter 14 — Agentic Platforms (HARNESS, agent-driven review)
-
-Companion code: github.com/achankra/peh, ch14/pr_review.py
 """
 
 from __future__ import annotations

@@ -11,13 +11,6 @@ At L2:    Agent + deterministic gate running in a loop.
 
 This is a thin wrapper around the validate_change implementation,
 exposing it under the path specification name /iterative-refactor.
-
-PEH Reference:
-    Chapter 4  — Embedding Observability (telemetry, structured signals)
-    Chapter 11 — Policy as Code (automated policy gates)
-    Chapter 13 — Resilience Automation (feedback loops, retry patterns)
-
-Companion code: github.com/achankra/peh
 """
 
 from __future__ import annotations

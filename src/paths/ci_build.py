@@ -12,12 +12,6 @@ This implementation uses REAL tools:
     - Ruff for linting (subprocess, same as CI would run it)
     - ast.parse + importlib for build verification
     - Pattern-based security scanning
-
-PEH Reference:
-    Chapter 8  — CI/CD as a Platform Service (pipeline design)
-    Chapter 11 — Policy as Code (security gates)
-
-Companion code: github.com/achankra/peh, ch08/ci_build.py
 """
 
 from __future__ import annotations
@@ -82,7 +76,8 @@ def _make_lint_stage(target_files):
             "output": (
                 f"No lint errors ({result['files_checked']} file(s) checked)"
                 if result["passed"]
-                else f"{result['error_count']} error(s), {result['warning_count']} warning(s)"
+                else result.get("error")
+                or f"{result['error_count']} error(s), {result['warning_count']} warning(s)"
             ),
             "detail": result,
         }

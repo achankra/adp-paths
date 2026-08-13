@@ -1,4 +1,4 @@
-"""Allow running as: python -m src [args]"""
+"""Allow running as: python3 -m src [args]"""
 from src.cli import main
 
 main()

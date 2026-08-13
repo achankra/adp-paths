@@ -7,19 +7,17 @@ showing the structural differences in layer activation, HARNESS
 engagement, and GOVERNANCE tracking.
 
 Usage:
-    python -m src.cli --simulate                    # All paths, local heuristics (default)
-    python -m src.cli --live                                   # All paths, Claude API
-    python -m src.cli --live --model claude-sonnet-4-5  # Specific model
-    python -m src.cli --simulate ci-build                      # Single path
-    python -m src.cli --simulate pr-review
-    python -m src.cli --simulate iterative-refactor
+    python3 -m src.cli --simulate                    # All paths, local heuristics (default)
+    python3 -m src.cli --live                                   # All paths, Claude API
+    python3 -m src.cli --live --model claude-sonnet-4-5  # Specific model
+    python3 -m src.cli --simulate ci-build                      # Single path
+    python3 -m src.cli --simulate --step iterative-refactor     # Pause between sections (demos)
+    python3 -m src.cli --simulate pr-review
+    python3 -m src.cli --simulate iterative-refactor
 
 Environment:
     ANTHROPIC_API_KEY  — Required for --live mode
     ANTHROPIC_MODEL    — Optional model override (default: claude-sonnet-4-5)
-
-PEH Reference: The Platform Engineer's Handbook (Chankramath, 2026)
-Companion code: github.com/achankra/peh
 """
 
 from __future__ import annotations
@@ -51,7 +49,23 @@ MAGENTA = "\033[35m"
 CYAN = "\033[36m"
 
 
+_STEP_MODE = {"enabled": False, "sections": 0}
+
+
+def _pause():
+    """In --step mode, wait for Enter before each new section (demo pacing)."""
+    _STEP_MODE["sections"] += 1
+    if not _STEP_MODE["enabled"] or _STEP_MODE["sections"] <= 1:
+        return
+    if not sys.stdin.isatty():
+        return
+    import contextlib
+    with contextlib.suppress(EOFError):
+        input(f"{DIM}  ⏎  press Enter for the next section …{RESET}")
+
+
 def header(text: str):
+    _pause()
     line = "═" * 68
     print(f"\n{CYAN}{line}{RESET}")
     print(f"{BOLD}{CYAN}  {text}{RESET}")
@@ -59,6 +73,7 @@ def header(text: str):
 
 
 def subheader(text: str):
+    _pause()
     print(f"\n{BOLD}  {text}{RESET}")
     print(f"{DIM}  {'─' * 60}{RESET}")
 
@@ -380,6 +395,11 @@ def main():
         help="Alias for the positional path argument",
     )
     parser.add_argument(
+        "--step",
+        action="store_true",
+        help="Pause for Enter between output sections (live demos and recordings)",
+    )
+    parser.add_argument(
         "--simulate",
         action="store_true",
         default=True,
@@ -418,6 +438,7 @@ def main():
     args = parser.parse_args()
     if args.path_flag:
         args.path = args.path_flag
+    _STEP_MODE["enabled"] = args.step
 
     if args.live:
         args.simulate = False
@@ -440,8 +461,6 @@ def main():
         mode = f"live (Claude API: {args.model or DEFAULT_MODEL})"
     print(f"{DIM}  Three-Layer Architecture: L01 Tooling | L02 Paths | L03 Agents")
     print(f"  Mode: {mode}")
-    print("  Reference: The Platform Engineer's Handbook (Chankramath, 2026)")
-    print(f"  Companion: github.com/achankra/peh{RESET}")
 
     runners = {
         "ci-build": demo_ci_build,

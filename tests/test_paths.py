@@ -6,9 +6,6 @@ Tests for the three platform paths:
 
 All tests use simulate mode (no API calls).
 All tests run against real sample code (sample/src/).
-
-PEH Reference: Chapter 14 (Agentic Platforms)
-Companion code: github.com/achankra/peh, ch14/test_paths.py
 """
 
 from pathlib import Path
@@ -32,7 +29,7 @@ class TestCiBuild:
     The pipeline is identical at L0-L1 and L2. It stays on L01.
     No HARNESS. No GOVERNANCE.
 
-    PEH Ch.8: "The pipeline is the arbiter."
+    "The pipeline is the arbiter."
     """
 
     @pytest.mark.asyncio
@@ -77,7 +74,7 @@ class TestPrReview:
     """
     At L0-L1: manual. At L2: agent-driven with HARNESS + GOVERNANCE.
 
-    PEH Ch.14: "The agent reviews with context and evidence.
+    "The agent reviews with context and evidence.
     The human validates — the agent does not merge."
     """
 
@@ -150,7 +147,7 @@ class TestIterativeRefactor:
     The most underestimated shift. Agent + deterministic gate
     in a feedback loop.
 
-    PEH Ch.13: "The gate does not change. The agent adapts."
+    "The gate does not change. The agent adapts."
     """
 
     @pytest.mark.asyncio
@@ -231,7 +228,7 @@ class TestDispatchWork:
     Dispatch Work is a NEW path at L2. At L0-L1, humans
     pick work from a backlog — no dispatch logic.
 
-    PEH Ch.14: "At L2, Dispatch Work assigns work to agents
+    "At L2, Dispatch Work assigns work to agents
     by capability — not picked up by humans."
     """
 

@@ -14,13 +14,6 @@ Three-layer mapping:
     L02 — Path definition: dispatch typed as probabilistic
     L03 — HARNESS: context → capability matching → assignment → evaluation
           GOVERNANCE: identity verification, scope enforcement, audit trail
-
-PEH Reference:
-    Chapter 8  — CI/CD as a Platform Service (pipeline triggering)
-    Chapter 10 — Starter Kits and Golden Paths (path definitions)
-    Chapter 14 — Agentic Platforms (dispatch, agent orchestration)
-
-Companion code: github.com/achankra/peh, ch14/dispatch.py
 """
 
 from __future__ import annotations

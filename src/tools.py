@@ -4,13 +4,6 @@ Real Pipeline Tools — L01 Deterministic Fabric
 Functional wrappers around Ruff (lint/format), module verification,
 and security scanning. These are the L01 deterministic tools — they
 produce the same result for the same input, every time.
-
-PEH Reference:
-    Chapter 8  — CI/CD as a Platform Service (pipeline stages, golden paths)
-    Chapter 11 — Policy as Code (security gates, OPA integration)
-    Chapter 3  — Securing Platform Access (RBAC, identity, scanning)
-
-Companion code: github.com/achankra/peh, Chapters 8, 11
 """
 
 from __future__ import annotations
@@ -41,18 +34,27 @@ def lint(file_paths: list[str], *, fix: bool = False, config: str | None = None)
     # Find ruff binary — check common install locations
     import shutil
 
+    ruff_cmd: list[str] | None = None
     ruff_bin = shutil.which("ruff")
-    if ruff_bin is None:
+    if ruff_bin is not None:
+        ruff_cmd = [ruff_bin]
+    else:
         # Check pip user install location
         local_bin = Path.home() / ".local" / "bin" / "ruff"
         if local_bin.exists():
-            ruff_bin = str(local_bin)
+            ruff_cmd = [str(local_bin)]
+        else:
+            # Fall back to the current interpreter's ruff module (venv installs)
+            import importlib.util
+            if importlib.util.find_spec("ruff") is not None:
+                import sys
+                ruff_cmd = [sys.executable, "-m", "ruff"]
 
-    if ruff_bin is None:
+    if ruff_cmd is None:
         return {
             "tool": "ruff",
             "passed": False,
-            "error": "Ruff not installed. Install with: pip install ruff",
+            "error": "Ruff not installed. Install with: python3 -m pip install -e '.[dev]'",
             "error_count": 0,
             "warning_count": 0,
             "fixable_count": 0,
@@ -61,7 +63,7 @@ def lint(file_paths: list[str], *, fix: bool = False, config: str | None = None)
             "files_checked": 0,
         }
 
-    cmd = [ruff_bin, "check", "--output-format=json", f"--config={config_path}"]
+    cmd = [*ruff_cmd, "check", "--output-format=json", f"--config={config_path}"]
 
     if fix:
         cmd.append("--fix")
@@ -90,7 +92,21 @@ def lint(file_paths: list[str], *, fix: bool = False, config: str | None = None)
     try:
         findings = json.loads(result.stdout) if result.stdout.strip() else []
     except json.JSONDecodeError:
-        findings = []
+        stderr_tail = "\n".join(result.stderr.strip().splitlines()[-3:])
+        return {
+            "tool": "ruff",
+            "passed": False,
+            "error": (
+                f"Ruff produced unparseable output (exit {result.returncode}). "
+                f"A gate must fail closed. Stderr: {stderr_tail or '(empty)'}"
+            ),
+            "error_count": 0,
+            "warning_count": 0,
+            "fixable_count": 0,
+            "errors": [],
+            "warnings": [],
+            "files_checked": 0,
+        }
 
     errors = []
     warnings = []

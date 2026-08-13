@@ -4,9 +4,6 @@ Platform API Request Handler
 A real, testable module representing a platform service endpoint.
 Used by the /ci-build and /validate-change paths as the target
 codebase that pipelines operate on.
-
-PEH Reference: Chapter 5 (Evaluate the User Experience)
-Companion code: github.com/achankra/peh, ch05/handler.py
 """
 
 from __future__ import annotations

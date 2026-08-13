@@ -8,14 +8,6 @@ Three components that control how the agent operates:
 
 GOVERNANCE is mandatory for all agent-driven paths.
 Every HARNESS execution is wrapped by GOVERNANCE.
-
-PEH Reference:
-    Chapter 3  — Securing Platform Access (RBAC, identity, OPA)
-    Chapter 4  — Embedding Observability (telemetry, tracing)
-    Chapter 11 — Policy as Code (OPA policies, admission control)
-    Chapter 14 — Agentic Platforms (agent governance, guardrails)
-
-Companion code: github.com/achankra/peh, Chapters 3, 4, 11, 14
 """
 
 from __future__ import annotations
