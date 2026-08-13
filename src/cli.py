@@ -429,6 +429,12 @@ def main():
         help="Start a Prometheus-compatible /metrics endpoint on port 8080",
     )
     parser.add_argument(
+        "--metrics-host",
+        type=str,
+        default="127.0.0.1",
+        help="Bind address for /metrics (use 0.0.0.0 for Docker-on-Linux scraping)",
+    )
+    parser.add_argument(
         "--metrics-port",
         type=int,
         default=8080,
@@ -477,7 +483,7 @@ def main():
         # Start metrics server if requested
         metrics_server = None
         if args.serve_metrics:
-            metrics_server = MetricsServer(obs, port=args.metrics_port)
+            metrics_server = MetricsServer(obs, port=args.metrics_port, host=args.metrics_host)
             metrics_server.start()
             print(f"  {GREEN}{BOLD}Metrics server started: {metrics_server.url}{RESET}")
             print(f"  {DIM}Prometheus can scrape this endpoint while the demo runs.{RESET}\n")

@@ -425,7 +425,7 @@ As cited in the *ADP in Action* paper:
 1. von Grünberg, K. and Galante, L. *Thinking in Platforms: Platform engineering as the operating model for work in the AI era.* Weave Intelligence, 2026. ISBN 978-3-9828877-0-8.
 2. *[The Four Levels of Agentic Software Development in the Enterprise](https://weaveintelligence.io/research/the-four-levels-of-agentic-software-development-in-the-enterprise).* Weave Intelligence, 2025.
 3. *[From IDP to ADP: Why Platform Engineers Now Build Agentic Development Platforms](https://weaveintelligence.io/blog/from-idp-to-adp).* Weave Intelligence, 2025.
-4. Chankramath, A. *The Platform Engineer's Handbook.* Packt, 2026. ISBN 978-1-80638-013-8.
+4. Chankramath, A. *[The Platform Engineer's Handbook](https://www.amazon.com/Platform-Engineers-Handbook-developer-focused-streamline/dp/1806380137).* Packt, 2026. ISBN 978-1-80638-013-8.
 
 ---
 

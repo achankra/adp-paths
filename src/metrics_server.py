@@ -51,16 +51,17 @@ class MetricsServer:
         server.stop()
     """
 
-    def __init__(self, obs_stack: ObservabilityStack, port: int = 8080):
+    def __init__(self, obs_stack: ObservabilityStack, port: int = 8080, host: str = "127.0.0.1"):
         self.obs_stack = obs_stack
         self.port = port
+        self.host = host
         self._httpd: HTTPServer | None = None
         self._thread: threading.Thread | None = None
 
     def start(self):
         """Start serving /metrics in a background thread."""
         handler = type("Handler", (_MetricsHandler,), {"obs_stack": self.obs_stack})
-        self._httpd = HTTPServer(("127.0.0.1", self.port), handler)
+        self._httpd = HTTPServer((self.host, self.port), handler)
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
 
