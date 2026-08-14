@@ -12,3 +12,5 @@ grafana/data/
 .ruff_cache/
 .DS_Store
 .venv/
+# Prometheus local TSDB (created when running prometheus from the repo root)
+data/

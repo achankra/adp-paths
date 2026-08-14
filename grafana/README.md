@@ -11,7 +11,7 @@ brew install grafana prometheus
 Start Prometheus and Grafana (run from the `adp_paths/` project root):
 
 ```bash
-prometheus --config.file=grafana/prometheus.yml &
+prometheus --config.file=grafana/prometheus.yml --storage.tsdb.path=/tmp/adp-prom-data &
 brew services start grafana
 ```
 
