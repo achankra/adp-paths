@@ -1,4 +1,4 @@
-# ADP Observability — Grafana + Prometheus
+# ADP Observability - Grafana + Prometheus
 
 Pre-configured observability stack for the ADP demo runner.
 
@@ -15,7 +15,7 @@ prometheus --config.file=grafana/prometheus.yml --storage.tsdb.path=/tmp/adp-pro
 brew services start grafana
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — login `admin` / `admin`.
+Open [http://localhost:3000](http://localhost:3000) - login `admin` / `admin`.
 
 Then add the data source and import the dashboard:
 
@@ -40,7 +40,7 @@ cd grafana
 docker compose up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — login `admin` / `admin`.
+Open [http://localhost:3000](http://localhost:3000) - login `admin` / `admin`.
 
 The data source and dashboard are auto-provisioned. No manual setup needed.
 
@@ -76,10 +76,10 @@ python3 -m src.cli --simulate --export-telemetry ./telemetry
 
 This writes four files to `./telemetry/`:
 
-- `traces.json` — OpenTelemetry-compatible spans
-- `metrics.json` — All counters, gauges, histograms
-- `logs.json` — Structured JSON log entries
-- `prometheus.txt` — Prometheus text exposition format
+- `traces.json` - OpenTelemetry-compatible spans
+- `metrics.json` - All counters, gauges, histograms
+- `logs.json` - Structured JSON log entries
+- `prometheus.txt` - Prometheus text exposition format
 
 ## Architecture Mapping
 

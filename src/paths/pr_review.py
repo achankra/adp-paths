@@ -1,5 +1,5 @@
 """
-/pr-review — Probabilistic Path (at L2)
+/pr-review - Probabilistic Path (at L2)
 
 At L0-L1: Human reads the diff. Hours later, with no context loaded.
           This path is unchanged at L1. Manual review only.
@@ -12,10 +12,10 @@ Two modes:
     --live:     Claude API generates the structured review
 
 HARNESS components activated at L2:
-    Context    — Loads source files, ADRs, team conventions
-    Capability — Selects review model by change type
-    Execution  — Generates structured review with evidence
-    Evaluation — Human validates. Agent does not merge.
+    Context    - Loads source files, ADRs, team conventions
+    Capability - Selects review model by change type
+    Execution  - Generates structured review with evidence
+    Evaluation - Human validates. Agent does not merge.
 """
 
 from __future__ import annotations
@@ -65,8 +65,8 @@ async def run_at_l01(pr: dict) -> dict:
         "duration_ms": int((time.time() - start) * 1000),
         "summary": {
             "l01": "PR queued in review backlog",
-            "l02": "None — path not defined at L0-L1",
-            "l03": "None — no agent infrastructure",
+            "l02": "None - path not defined at L0-L1",
+            "l03": "None - no agent infrastructure",
         },
     }
 
@@ -164,7 +164,7 @@ async def run_at_l02(pr: dict, options: dict | None = None) -> dict:
         "duration_ms": int((time.time() - start) * 1000),
         "summary": {
             "l01": "PR registered in pipeline system",
-            "l02": "Path defined as probabilistic — agent-driven review",
+            "l02": "Path defined as probabilistic - agent-driven review",
             "l03": (
                 f"HARNESS: Context → Capability → Execution → Evaluation (mode: {mode}). "
                 "GOVERNANCE: identity verified, policies enforced, telemetry recorded."
@@ -198,6 +198,6 @@ async def _no_merge_policy(action: dict) -> dict:
     if action.get("action") == "merge":
         return {
             "allowed": False,
-            "reason": "Agents cannot merge PRs at L2 — human approval required",
+            "reason": "Agents cannot merge PRs at L2 - human approval required",
         }
     return {"allowed": True, "reason": "Action permitted"}

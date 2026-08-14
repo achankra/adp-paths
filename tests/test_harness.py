@@ -1,5 +1,5 @@
 """
-Tests for src/harness.py — HARNESS agent execution orchestrator.
+Tests for src/harness.py - HARNESS agent execution orchestrator.
 
 All tests use simulate mode (no API calls, no cost).
 """

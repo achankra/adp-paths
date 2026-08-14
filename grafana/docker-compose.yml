@@ -1,4 +1,4 @@
-# ADP Observability Stack — Grafana + Prometheus (Docker option)
+# ADP Observability Stack - Grafana + Prometheus (Docker option)
 #
 # Run:   docker compose up -d
 # Open:  http://localhost:3000 (admin/admin)

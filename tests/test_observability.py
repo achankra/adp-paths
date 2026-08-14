@@ -1,5 +1,5 @@
 """
-Tests for src/observability.py — L01 Observability Infrastructure.
+Tests for src/observability.py - L01 Observability Infrastructure.
 
 Three pillars: Tracer (spans), Metrics (counters/gauges/histograms),
 StructuredLogger (JSON events). Plus the unified ObservabilityStack.

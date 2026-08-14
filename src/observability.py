@@ -1,10 +1,10 @@
 """
-Observability Infrastructure — L01 Platform Telemetry
+Observability Infrastructure - L01 Platform Telemetry
 
 Three components that provide structured observability across the platform:
-    Tracer           — OpenTelemetry-compatible span tracking with parent-child
-    Metrics          — Prometheus-compatible counters, gauges, histograms
-    StructuredLogger — JSON event log emitter with severity and context
+    Tracer           - OpenTelemetry-compatible span tracking with parent-child
+    Metrics          - Prometheus-compatible counters, gauges, histograms
+    StructuredLogger - JSON event log emitter with severity and context
 
 This is L01 infrastructure. GOVERNANCE.Observability (L03) wraps this
 for agent-specific events.
@@ -22,11 +22,11 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-# ── Tracer — OpenTelemetry-Compatible Spans ─────────────────────
+# ── Tracer - OpenTelemetry-Compatible Spans ─────────────────────
 
 
 class SpanStatus(StrEnum):
-    """Span completion status — mirrors OpenTelemetry StatusCode."""
+    """Span completion status - mirrors OpenTelemetry StatusCode."""
 
     OK = "ok"
     ERROR = "error"
@@ -44,7 +44,7 @@ class Span:
     """
     OpenTelemetry-compatible span.
 
-    Each span represents a unit of work — a pipeline stage, an agent
+    Each span represents a unit of work - a pipeline stage, an agent
     execution, a governance check. Spans nest via parent_span_id to
     form a trace tree.
 
@@ -102,7 +102,7 @@ class Span:
 
 class Tracer:
     """
-    Span tracer — creates, manages, and exports spans.
+    Span tracer - creates, manages, and exports spans.
 
     """
 
@@ -150,7 +150,7 @@ class Tracer:
         self._spans.clear()
 
 
-# ── Metrics — Prometheus-Compatible Counters/Gauges/Histograms ──
+# ── Metrics - Prometheus-Compatible Counters/Gauges/Histograms ──
 
 
 @dataclass
@@ -279,7 +279,7 @@ class Metrics:
         self._points.clear()
 
 
-# ── Structured Logger — JSON Event Logs ─────────────────────────
+# ── Structured Logger - JSON Event Logs ─────────────────────────
 
 
 class LogLevel(StrEnum):
@@ -359,7 +359,7 @@ class StructuredLogger:
         self._entries.clear()
 
 
-# ── Observability Stack — Unified Infrastructure ────────────────
+# ── Observability Stack - Unified Infrastructure ────────────────
 
 
 class ObservabilityStack:

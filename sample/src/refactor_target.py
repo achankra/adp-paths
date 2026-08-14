@@ -8,9 +8,9 @@ Seeded defects (all auto-fixable, so the demo is deterministic):
     - unused imports (F401)
     - unsorted import block (I001)
 
-Do not "clean up" this file — its defects ARE the demo. If you fix
-them here, the feedback loop demo passes on the first attempt and
-demonstrates nothing. Restore with: git checkout -- sample/
+Do not fix these defects. The demo depends on them: with a clean
+file, the L2 loop passes on the first attempt and there is nothing
+to show. Restore with: git checkout -- sample/
 """
 
 import os

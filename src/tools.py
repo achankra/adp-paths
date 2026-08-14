@@ -1,8 +1,8 @@
 """
-Real Pipeline Tools — L01 Deterministic Fabric
+Real Pipeline Tools - L01 Deterministic Fabric
 
 Functional wrappers around Ruff (lint/format), module verification,
-and security scanning. These are the L01 deterministic tools — they
+and security scanning. These are the L01 deterministic tools - they
 produce the same result for the same input, every time.
 """
 
@@ -25,13 +25,13 @@ def lint(file_paths: list[str], *, fix: bool = False, config: str | None = None)
     Run Ruff on target files. Returns structured results.
 
     Uses the project's ruff.toml for rules. Ruff is called via subprocess
-    so it mirrors exactly what a CI pipeline would do — no library API,
+    so it mirrors exactly what a CI pipeline would do - no library API,
     same binary, same output.
 
     """
     config_path = config or str(Path(__file__).parent.parent / "ruff.toml")
 
-    # Find ruff binary — check common install locations
+    # Find ruff binary - check common install locations
     import shutil
 
     ruff_cmd: list[str] | None = None
@@ -71,7 +71,7 @@ def lint(file_paths: list[str], *, fix: bool = False, config: str | None = None)
     cmd.extend(file_paths)
 
     try:
-        result = subprocess.run(  # noqa: S603 — fixed argv, no user input, shell=False
+        result = subprocess.run(  # noqa: S603 - fixed argv, no user input, shell=False
             cmd, capture_output=True, text=True, timeout=30,
         )
     except FileNotFoundError:
@@ -98,7 +98,7 @@ def lint(file_paths: list[str], *, fix: bool = False, config: str | None = None)
             "passed": False,
             "error": (
                 f"Ruff produced unparseable output (exit {result.returncode}). "
-                f"A gate must fail closed. Stderr: {stderr_tail or '(empty)'}"
+                f"Treating the gate as failed. Stderr: {stderr_tail or '(empty)'}"
             ),
             "error_count": 0,
             "warning_count": 0,
@@ -227,7 +227,7 @@ def build(module_paths: list[str]) -> dict:
     Verify that modules parse and load without errors.
 
     Uses ast.parse for syntax checking and importlib for load verification.
-    This is the "build" stage — can the code be compiled and loaded?
+    This is the "build" stage - can the code be compiled and loaded?
 
     """
     results = []
@@ -277,7 +277,7 @@ def build(module_paths: list[str]) -> dict:
 
 # ── Security Scanner ─────────────────────────────────────────────
 
-# Security patterns — regex-based detection of common anti-patterns.
+# Security patterns - regex-based detection of common anti-patterns.
 # In production these would be OPA policies.
 
 SECURITY_PATTERNS = [
@@ -327,7 +327,7 @@ SECURITY_PATTERNS = [
         "pattern": r"os\.system\s*\(",
         "rule": "no-os-system",
         "severity": "high",
-        "message": "os.system() detected — use subprocess instead",
+        "message": "os.system() detected - use subprocess instead",
     },
     {
         "pattern": r"pickle\.loads?\s*\(",

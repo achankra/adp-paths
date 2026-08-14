@@ -1,11 +1,11 @@
 """
 ADP Three-Layer Architecture
 
-L01 — Tooling (IDP): The deterministic foundation. CI pipelines, policy
+L01 - Tooling (IDP): The deterministic foundation. CI pipelines, policy
       gates, observability, identity. Does not change when agents arrive.
-L02 — Path Definitions: The eight paths to outcomes. Each typed as
+L02 - Path Definitions: The eight paths to outcomes. Each typed as
       deterministic, probabilistic, or hybrid.
-L03 — Agent Infrastructure: HARNESS (Context, Capability, Execution,
+L03 - Agent Infrastructure: HARNESS (Context, Capability, Execution,
       Evaluation) and GOVERNANCE (Identity, Security, Observability).
 """
 
@@ -31,18 +31,18 @@ class PathType(StrEnum):
     HYBRID = "hybrid"
 
 
-# ── L01 — IDP Tooling Layer ──────────────────────────────────────
+# ── L01 - IDP Tooling Layer ──────────────────────────────────────
 
 
 class L01Tooling:
     """
-    L01 — The deterministic fabric.
+    L01 - The deterministic fabric.
 
     Provides pipelines, policy gates, and telemetry. This layer is
     identical at L0/L1 and L2. It does not bend for agents.
 
     When an ObservabilityStack is provided, pipeline runs are traced
-    with spans — one root span per pipeline, one child span per stage.
+    with spans - one root span per pipeline, one child span per stage.
 
     """
 
@@ -156,7 +156,7 @@ class L01Tooling:
         self.telemetry.clear()
 
 
-# ── L02 — Path Definitions Layer ─────────────────────────────────
+# ── L02 - Path Definitions Layer ─────────────────────────────────
 
 
 @dataclass
@@ -174,7 +174,7 @@ class PathDefinition:
 
 class L02PathDefinitions:
     """
-    L02 — Registry of the eight paths to outcomes.
+    L02 - Registry of the eight paths to outcomes.
 
     Each path declares its type and which layers it requires.
     At L0/L1, only two paths are altered (Retrieve Context,
@@ -202,12 +202,12 @@ class L02PathDefinitions:
         return path.type in (PathType.PROBABILISTIC, PathType.HYBRID)
 
 
-# ── L03 — Agent Infrastructure Layer ─────────────────────────────
+# ── L03 - Agent Infrastructure Layer ─────────────────────────────
 
 
 class L03AgentInfra:
     """
-    L03 — Agent Infrastructure.
+    L03 - Agent Infrastructure.
 
     Only activates for paths typed as probabilistic or hybrid.
     Contains HARNESS (orchestration) and GOVERNANCE (control).

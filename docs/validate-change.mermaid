@@ -1,5 +1,5 @@
 ---
-title: "/validate-change — Hybrid Path"
+title: "/validate-change - Hybrid Path"
 ---
 sequenceDiagram
     autonumber
@@ -13,7 +13,7 @@ sequenceDiagram
     participant GOV as L03 GOVERNANCE
     participant Obs as ObservabilityStack
 
-    Note over H,Obs: L0-L1 — Single gate. Human reads output. Fixes manually.
+    Note over H,Obs: L0-L1 - Single gate. Human reads output. Fixes manually.
     H->>L01: run_pipeline("validate-change", input)
     activate L01
     L01->>Ruff: lint(target_files)
@@ -22,10 +22,10 @@ sequenceDiagram
     AST-->>L01: build result
     L01->>AST: security_scan(target_files)
     AST-->>L01: scan result
-    L01-->>H: pipeline_result — human reads and fixes manually
+    L01-->>H: pipeline_result - human reads and fixes manually
     deactivate L01
 
-    Note over H,Obs: L2 — Agent + gate feedback loop (hybrid)
+    Note over H,Obs: L2 - Agent + gate feedback loop (hybrid)
 
     rect rgb(240, 240, 255)
         Note right of GOV: GOVERNANCE setup
@@ -35,7 +35,7 @@ sequenceDiagram
 
     loop Attempt 1..N (max_retries = 3)
         rect rgb(230, 245, 230)
-            Note right of L01: L01 — Deterministic gate (same every time)
+            Note right of L01: L01 - Deterministic gate (same every time)
             A->>L01: run_pipeline("validate-change", {})
             activate L01
             L01->>Obs: tracer.start_span("pipeline-validate-change")
@@ -51,10 +51,10 @@ sequenceDiagram
         end
 
         alt pipeline passed
-            A->>A: Break loop — validation complete
+            A->>A: Break loop - validation complete
         else pipeline failed
             rect rgb(255, 245, 230)
-                Note right of HARN: L03 — Agent interprets failure, generates fix
+                Note right of HARN: L03 - Agent interprets failure, generates fix
 
                 A->>A: Collect structured failure signals from pipeline stages
 
@@ -90,7 +90,7 @@ sequenceDiagram
         A-->>H: Validation passed (first-pass or agent-fix)
     else exhausted
         A->>GOV: observability.record({action: "escalated"})
-        A-->>H: Escalated to human — retry limit reached
+        A-->>H: Escalated to human - retry limit reached
     end
 
 %% Flow (L0-L1):
@@ -99,11 +99,11 @@ sequenceDiagram
 %% (3) Pipeline returns pass/fail. Human reads the output.
 %% (4) If it failed, the human fixes manually and pushes again. No feedback loop. No agent.
 %%
-%% Flow (L2 — hybrid feedback loop):
+%% Flow (L2 - hybrid feedback loop):
 %% (1) Agent registers its identity with GOVERNANCE (permissions: read, fix, resubmit).
 %%     A retry-limit-policy is added to enforce the max_retries cap.
 %% (2) The loop begins. On each attempt:
-%%     (a) L01 runs the deterministic validation gate — the exact same pipeline as L0-L1.
+%%     (a) L01 runs the deterministic validation gate - the exact same pipeline as L0-L1.
 %%         Ruff lints the files, ast.parse verifies the build, security scanner checks for issues.
 %%         Each stage is traced via ObservabilityStack.
 %%     (b) If the pipeline passes, the loop breaks. Validation is complete.

@@ -1,5 +1,5 @@
 # Prometheus configuration for the DOCKER option.
-# Inside the container, "localhost" is the container itself — the demo's
+# Inside the container, "localhost" is the container itself - the demo's
 # /metrics endpoint runs on the HOST, reached via host.docker.internal.
 # (On Linux, also run the demo with --metrics-host 0.0.0.0.)
 

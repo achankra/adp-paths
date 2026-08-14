@@ -1,8 +1,8 @@
 """
-Tests for src/tools.py — L01 deterministic pipeline tools.
+Tests for src/tools.py - L01 deterministic pipeline tools.
 
 All tests use real files (the sample code under sample/src/).
-No mocks, no simulations. The tools are deterministic — same
+No mocks, no simulations. The tools are deterministic - same
 input, same result.
 """
 
@@ -18,7 +18,7 @@ UTILS = str(SAMPLE_DIR / "utils.py")
 
 
 class TestLint:
-    """Lint tests — real Ruff on real files."""
+    """Lint tests - real Ruff on real files."""
 
     def test_lint_clean_files(self):
         """Sample code should pass lint (it was written to be clean)."""
@@ -59,7 +59,7 @@ class TestLint:
 
 
 class TestRunTests:
-    """Module-level assertion tests — real importlib on real modules."""
+    """Module-level assertion tests - real importlib on real modules."""
 
     def test_handler_loads(self):
         """Handler module should load and export expected symbols."""
@@ -109,7 +109,7 @@ class TestRunTests:
 
 
 class TestBuild:
-    """Build verification — real ast.parse on real files."""
+    """Build verification - real ast.parse on real files."""
 
     def test_build_sample_files(self):
         """Sample code should parse and export expected symbols."""
@@ -141,7 +141,7 @@ class TestBuild:
 
 
 class TestSecurityScan:
-    """Security scanning — real pattern matching on real files."""
+    """Security scanning - real pattern matching on real files."""
 
     def test_clean_files_pass(self):
         """Sample code should have no critical findings."""

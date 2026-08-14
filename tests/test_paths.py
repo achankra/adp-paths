@@ -1,8 +1,8 @@
 """
 Tests for the three platform paths:
-    /ci-build           — Deterministic
-    /pr-review          — Probabilistic
-    /iterative-refactor — Hybrid
+    /ci-build           - Deterministic
+    /pr-review          - Probabilistic
+    /iterative-refactor - Hybrid
 
 All tests use simulate mode (no API calls).
 All tests run against real sample code (sample/src/).
@@ -21,7 +21,7 @@ SAMPLE_FILES = [
 ]
 
 
-# ── /ci-build — Deterministic ────────────────────────────────────
+# ── /ci-build - Deterministic ────────────────────────────────────
 
 
 class TestCiBuild:
@@ -51,7 +51,7 @@ class TestCiBuild:
 
     @pytest.mark.asyncio
     async def test_l02_identical_to_l01(self):
-        """Pipeline is unchanged at L2 — same stages, same result."""
+        """Pipeline is unchanged at L2 - same stages, same result."""
         result = await ci_build.run_at_l02({
             "file_paths": SAMPLE_FILES,
             "triggered_by": "agent-commit",
@@ -67,7 +67,7 @@ class TestCiBuild:
         assert result["pipeline"]["passed"]
 
 
-# ── /pr-review — Probabilistic ───────────────────────────────────
+# ── /pr-review - Probabilistic ───────────────────────────────────
 
 
 class TestPrReview:
@@ -75,7 +75,7 @@ class TestPrReview:
     At L0-L1: manual. At L2: agent-driven with HARNESS + GOVERNANCE.
 
     "The agent reviews with context and evidence.
-    The human validates — the agent does not merge."
+    The human validates - the agent does not merge."
     """
 
     @pytest.mark.asyncio
@@ -139,7 +139,7 @@ class TestPrReview:
         assert gov["observability"]["total_executions"] >= 1
 
 
-# ── /iterative-refactor — Hybrid ─────────────────────────────────
+# ── /iterative-refactor - Hybrid ─────────────────────────────────
 
 
 class TestIterativeRefactor:
@@ -212,7 +212,7 @@ class TestIterativeRefactor:
         assert result["result"]["resolved_by"] in ("first-pass", "agent-fix")
 
 
-# ── /dispatch-work — Dispatch (L2 only) ─────────────────────────
+# ── /dispatch-work - Dispatch (L2 only) ─────────────────────────
 
 
 WORK_ITEMS = [
@@ -226,10 +226,10 @@ WORK_ITEMS = [
 class TestDispatchWork:
     """
     Dispatch Work is a NEW path at L2. At L0-L1, humans
-    pick work from a backlog — no dispatch logic.
+    pick work from a backlog - no dispatch logic.
 
     "At L2, Dispatch Work assigns work to agents
-    by capability — not picked up by humans."
+    by capability - not picked up by humans."
     """
 
     @pytest.mark.asyncio

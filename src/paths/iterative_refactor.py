@@ -1,5 +1,5 @@
 """
-/iterative-refactor — Hybrid Path (at L2)
+/iterative-refactor - Hybrid Path (at L2)
 
 Refactor under a test gate. Loops between Agent Infrastructure and Tooling.
 
@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from src.paths import validate_change
 
-# Re-export the validation stages — the gate is identical
+# Re-export the validation stages - the gate is identical
 create_validation_stages = validate_change.create_validation_stages
 
 
@@ -29,7 +29,7 @@ async def run_at_l01(change: dict) -> dict:
 
 
 async def run_at_l02(change: dict, options: dict | None = None) -> dict:
-    """Run /iterative-refactor at L2 (hybrid — agent + gate feedback loop)."""
+    """Run /iterative-refactor at L2 (hybrid - agent + gate feedback loop)."""
     options = options or {}
     options.setdefault("agent_id", "refactor-agent-001")
     result = await validate_change.run_at_l02(change, options)

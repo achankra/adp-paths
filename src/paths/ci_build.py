@@ -1,5 +1,5 @@
 """
-/ci-build — Deterministic Path
+/ci-build - Deterministic Path
 
 The CI/CD pipeline is deterministic at every maturity level.
 Same commit + same pipeline definition = same result.
@@ -25,7 +25,7 @@ SAMPLE_DIR = Path(__file__).parent.parent.parent / "sample" / "src"
 
 
 def _default_target_files(input_data: dict) -> list[str]:
-    """Resolve target files — use provided paths or fall back to sample code."""
+    """Resolve target files - use provided paths or fall back to sample code."""
     if "file_paths" in input_data:
         return input_data["file_paths"]
     return [
@@ -39,7 +39,7 @@ def create_default_stages(input_data: dict) -> list[dict]:
     Create pipeline stages that use real tools.
 
     Each stage calls the actual Ruff linter, ast.parse, or
-    security scanner — not a simulation.
+    security scanner - not a simulation.
 
     """
     target_files = _default_target_files(input_data)
@@ -118,7 +118,7 @@ def _make_test_stage(target_files):
                 f"PASS: {result['pass_count']} of {result['total']} assertions passed"
                 if result["passed"]
                 else (
-                    f"FAIL: {result['fail_count']} of {result['total']} failed — "
+                    f"FAIL: {result['fail_count']} of {result['total']} failed - "
                     + "; ".join(r["description"] for r in result["results"] if not r["passed"])
                 )
             ),
@@ -161,7 +161,7 @@ def _make_security_stage(target_files):
                 f"{result['total_findings']} info/low finding(s))"
                 if result["passed"]
                 else (
-                    f"CRITICAL: {result['critical_count']} critical finding(s) — "
+                    f"CRITICAL: {result['critical_count']} critical finding(s) - "
                     + "; ".join(
                         f"{f['file']}:{f['line']} {f['message']}"
                         for f in result["findings"]
@@ -201,8 +201,8 @@ async def run_at_l01(input_data: dict, options: dict | None = None) -> dict:
         "governance": None,
         "summary": {
             "l01": "Pipeline executed (lint → test → build → security)",
-            "l02": "None — deterministic path has no path definition layer",
-            "l03": "None — deterministic path has no agent infrastructure",
+            "l02": "None - deterministic path has no path definition layer",
+            "l03": "None - deterministic path has no agent infrastructure",
         },
     }
 
@@ -211,8 +211,8 @@ async def run_at_l02(input_data: dict, options: dict | None = None) -> dict:
     """
     Run /ci-build at L2 (agent era).
 
-    The pipeline is identical. Agents may have authored the code,
-    but the pipeline does not know or care.
+    The pipeline is identical. Agents may have authored the code;
+    the pipeline runs the same either way.
 
     """
     options = options or {}
@@ -234,7 +234,7 @@ async def run_at_l02(input_data: dict, options: dict | None = None) -> dict:
         "governance": None,
         "summary": {
             "l01": "Pipeline executed (identical to L0-L1)",
-            "l02": "None — deterministic paths stay on L01 at every maturity level",
-            "l03": "None — no agent infrastructure needed for deterministic paths",
+            "l02": "None - deterministic paths stay on L01 at every maturity level",
+            "l03": "None - no agent infrastructure needed for deterministic paths",
         },
     }

@@ -1,5 +1,5 @@
 """
-HARNESS — Agent Execution Orchestrator
+HARNESS - Agent Execution Orchestrator
 
 Two modes:
     --simulate (default): Local heuristic analysis. No API calls.
@@ -7,10 +7,10 @@ Two modes:
                           Requires ANTHROPIC_API_KEY env var.
 
 Four components:
-    Context    — Reads files, loads failure signals, gathers metadata
-    Capability — Selects model/strategy based on change type
-    Execution  — Runs analysis (simulated or Claude)
-    Evaluation — Assesses result quality, determines next step
+    Context    - Reads files, loads failure signals, gathers metadata
+    Capability - Selects model/strategy based on change type
+    Execution  - Runs analysis (simulated or Claude)
+    Evaluation - Assesses result quality, determines next step
 
                  agent orchestration patterns, context retrieval)
 
@@ -112,10 +112,10 @@ class HarnessCapability:
 
 class HarnessExecution:
     """
-    Execution component — runs analysis in simulate or live mode.
+    Execution component - runs analysis in simulate or live mode.
 
     Simulate mode uses local heuristic analysis (AST parsing,
-    pattern matching) — no API calls, no cost, works offline.
+    pattern matching) - no API calls, no cost, works offline.
 
     Live mode sends code to Claude via the anthropic Python SDK
     for structured review or fix generation.
@@ -267,9 +267,9 @@ class HarnessExecution:
         """
         Local heuristic review using Python's ast module.
 
-        Parses actual source code and looks for real patterns —
-        not canned responses. The findings are a function of
-        the input, not a simulation.
+        Parses actual source code and looks for real patterns
+        rather than returning canned responses. The findings
+        are derived from the input.
         """
         files = next(
             (r for r in context.get("retrieved", []) if r["source"] == "files"), None

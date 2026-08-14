@@ -1,5 +1,5 @@
 """
-Tests for src/governance.py — GOVERNANCE control layer.
+Tests for src/governance.py - GOVERNANCE control layer.
 """
 
 
@@ -32,7 +32,7 @@ class TestGovernanceIdentity:
 
 
 class TestGovernanceSecurity:
-    """'Policy as Code — same policies, human or agent.'"""
+    """'Policy as Code - same policies, human or agent.'"""
 
     @pytest.mark.asyncio
     async def test_allow_when_no_policies(self):
@@ -112,7 +112,7 @@ class TestGovernanceObservability:
 
 
 class TestGovernance:
-    """Full GOVERNANCE orchestrator — wrap with identity + security + observability."""
+    """Full GOVERNANCE orchestrator - wrap with identity + security + observability."""
 
     @pytest.mark.asyncio
     async def test_wrap_success(self):

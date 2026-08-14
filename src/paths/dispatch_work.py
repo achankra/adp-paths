@@ -1,8 +1,8 @@
 """
-/dispatch-work — Dispatch Path (L2 only)
+/dispatch-work - Dispatch Path (L2 only)
 
 This path does NOT exist at L0/L1. At L0 and L1, humans pick up work
-themselves — from a backlog, a Kanban board, a PR queue. There is no
+themselves - from a backlog, a Kanban board, a PR queue. There is no
 dispatch. The concept of assigning work to an agent is new at L2.
 
 At L2, Dispatch Work is the orchestrator that feeds the other paths.
@@ -10,9 +10,9 @@ It receives work items, matches them to agents based on capability,
 assigns with GOVERNANCE wrapping, and tracks outcomes.
 
 Three-layer mapping:
-    L01 — WorkQueue: infrastructure for queueing work items
-    L02 — Path definition: dispatch typed as probabilistic
-    L03 — HARNESS: context → capability matching → assignment → evaluation
+    L01 - WorkQueue: infrastructure for queueing work items
+    L02 - Path definition: dispatch typed as probabilistic
+    L03 - HARNESS: context → capability matching → assignment → evaluation
           GOVERNANCE: identity verification, scope enforcement, audit trail
 """
 
@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from src.governance import Governance
-from src.harness import Harness  # noqa: F401 — referenced conceptually
+from src.harness import Harness  # noqa: F401 - referenced conceptually
 from src.layers import PathType
 from src.observability import ObservabilityStack, SpanStatus
 
@@ -36,7 +36,7 @@ class WorkItem:
     """
     A unit of work to be dispatched.
 
-    Work items arrive from external triggers — a PR opened, a commit
+    Work items arrive from external triggers - a PR opened, a commit
     pushed, a scheduled validation, a remediation alert. Each item
     has a type that maps to a platform path.
 
@@ -55,7 +55,7 @@ class WorkItem:
     status: str = "pending"  # pending, assigned, completed, failed, escalated
 
 
-# ── Work Queue — L01 Infrastructure ─────────────────────────────
+# ── Work Queue - L01 Infrastructure ─────────────────────────────
 
 
 class WorkQueue:
@@ -63,7 +63,7 @@ class WorkQueue:
     L01 work queue infrastructure.
 
     A priority-ordered queue for work items. This is platform
-    infrastructure — it exists at L01 regardless of whether agents
+    infrastructure - it exists at L01 regardless of whether agents
     or humans consume from it.
 
     """
@@ -109,7 +109,7 @@ class WorkQueue:
         return {p: len(q) for p, q in self._queues.items()}
 
 
-# ── Agent Registry — L01 Infrastructure ─────────────────────────
+# ── Agent Registry - L01 Infrastructure ─────────────────────────
 
 
 @dataclass
@@ -136,7 +136,7 @@ class AgentCapability:
         return self.current_load < self.max_concurrent
 
 
-# ── Dispatcher — L02 Path Logic ─────────────────────────────────
+# ── Dispatcher - L02 Path Logic ─────────────────────────────────
 
 
 # Agent-to-path mapping: which work types map to which platform paths
@@ -210,8 +210,8 @@ async def run_at_l01(work_items: list[dict]) -> dict:
         "governance": None,
         "summary": {
             "l01": f"Work queue loaded with {len(items)} item(s)",
-            "l02": "None — no dispatch path at L0-L1",
-            "l03": "None — no agent infrastructure",
+            "l02": "None - no dispatch path at L0-L1",
+            "l03": "None - no agent infrastructure",
         },
     }
 
@@ -315,18 +315,18 @@ async def run_at_l02(
             attributes={"work_item.id": item.id, "work_item.type": item.type},
         )
 
-        # HARNESS: Context — understand the work item
+        # HARNESS: Context - understand the work item
         assign_span.set_attribute("work_item.priority", item.priority)
         assign_span.set_attribute(
             "work_item.target_path",
             WORK_TYPE_TO_PATH.get(item.type, "unknown"),
         )
 
-        # HARNESS: Capability — match agent to work
+        # HARNESS: Capability - match agent to work
         matched_agent = _match_agent(item, agents)
 
         if matched_agent is None:
-            # No agent available — escalate to human
+            # No agent available - escalate to human
             item.status = "escalated"
             escalations.append({
                 "item_id": item.id,
@@ -335,7 +335,7 @@ async def run_at_l02(
             })
             obs.metrics.counter("dispatch_escalations", labels={"type": item.type})
             obs.logger.warn(
-                "Work item escalated — no capable agent",
+                "Work item escalated - no capable agent",
                 item_id=item.id,
                 work_type=item.type,
             )
@@ -419,7 +419,7 @@ async def run_at_l02(
         "duration_ms": int((time.time() - start) * 1000),
         "summary": {
             "l01": f"Work queue processed {len(parsed_items)} item(s) by priority",
-            "l02": "Path defined as probabilistic — capability-matched dispatch",
+            "l02": "Path defined as probabilistic - capability-matched dispatch",
             "l03": (
                 f"HARNESS: context loaded, {len(assignments)} assignment(s) matched. "
                 f"GOVERNANCE: {len(agents)} agent(s) verified, policies enforced, "

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ADP in Action — Demo Runner
+ADP in Action - Demo Runner
 
 Runs all three platform paths at L0/L1 and L2, side by side,
 showing the structural differences in layer activation, HARNESS
@@ -16,8 +16,8 @@ Usage:
     python3 -m src.cli --simulate iterative-refactor
 
 Environment:
-    ANTHROPIC_API_KEY  — Required for --live mode
-    ANTHROPIC_MODEL    — Optional model override (default: claude-sonnet-4-5)
+    ANTHROPIC_API_KEY  - Required for --live mode
+    ANTHROPIC_MODEL    - Optional model override (default: claude-sonnet-4-5)
 """
 
 from __future__ import annotations
@@ -106,7 +106,7 @@ def print_pipeline(pipeline: dict | None):
         return
     for stage in pipeline["stages"]:
         icon = status_icon(stage["passed"])
-        print(f"    {icon} {stage['name']} ({stage['tool']}) — {stage['output']}")
+        print(f"    {icon} {stage['name']} ({stage['tool']}) - {stage['output']}")
 
 
 def print_summary(summary: dict):
@@ -119,7 +119,7 @@ def print_summary(summary: dict):
 # ── Path demos ───────────────────────────────────────────────────
 
 async def demo_ci_build(args, options=None):
-    header("/ci-build — Deterministic Path")
+    header("/ci-build - Deterministic Path")
 
     sample_files = [
         str(SAMPLE_DIR / "handler.py"),
@@ -150,13 +150,13 @@ async def demo_ci_build(args, options=None):
     label("Triggered by", l02["triggered_by"])
     print(f"\n  {BOLD}Pipeline:{RESET}")
     print_pipeline(l02["pipeline"])
-    label("HARNESS", "None — deterministic path")
-    label("GOVERNANCE", "None — deterministic path")
+    label("HARNESS", "None - deterministic path")
+    label("GOVERNANCE", "None - deterministic path")
     print_summary(l02["summary"])
 
 
 async def demo_pr_review(args, options=None):
-    header("/pr-review — Probabilistic Path (at L2)")
+    header("/pr-review - Probabilistic Path (at L2)")
 
     sample_files = [
         str(SAMPLE_DIR / "handler.py"),
@@ -240,10 +240,10 @@ async def demo_pr_review(args, options=None):
 
 
 async def demo_iterative_refactor(args, options=None):
-    header("/iterative-refactor — Hybrid Path (at L2)")
+    header("/iterative-refactor - Hybrid Path (at L2)")
 
     # refactor_target.py ships with seeded, auto-fixable lint defects so the
-    # feedback loop genuinely loops: gate fails on attempt 1, the agent fixes,
+    # feedback loop actually loops: gate fails on attempt 1, the agent fixes,
     # the gate passes on attempt 2. utils.py is the clean control file.
     sample_files = [
         str(SAMPLE_DIR / "refactor_target.py"),
@@ -259,7 +259,7 @@ async def demo_iterative_refactor(args, options=None):
     label("Passed", str(l01["pipeline"]["passed"]))
     print(f"\n  {BOLD}Pipeline:{RESET}")
     print_pipeline(l01["pipeline"])
-    label("Loop", "None — human reads output and fixes manually")
+    label("Loop", "None - human reads output and fixes manually")
     label("HARNESS", "None")
     label("GOVERNANCE", "None")
     print_summary(l01["summary"])
@@ -286,7 +286,7 @@ async def demo_iterative_refactor(args, options=None):
         print(f"    {icon}{RESET} Attempt {entry['attempt']}: {gate}")
         if entry.get("fix"):
             targets = ", ".join(entry["fix"]["targets"]) or "none"
-            print(f"      {DIM}Fix: {entry['fix']['fix_type']} — targets: {targets}{RESET}")
+            print(f"      {DIM}Fix: {entry['fix']['fix_type']} - targets: {targets}{RESET}")
 
     print(f"\n  {BOLD}GOVERNANCE:{RESET}")
     if l02["governance"]:
@@ -296,7 +296,7 @@ async def demo_iterative_refactor(args, options=None):
 
 
 async def demo_dispatch_work(args, options=None):
-    header("/dispatch-work — Dispatch Path (L2 only)")
+    header("/dispatch-work - Dispatch Path (L2 only)")
 
     work_items = [
         {"id": "work-001", "type": "review", "priority": "high",
@@ -358,7 +358,7 @@ async def demo_dispatch_work(args, options=None):
     if l02["dispatch"]["escalations"]:
         print(f"\n  {BOLD}Escalations:{RESET}")
         for e in l02["dispatch"]["escalations"]:
-            print(f"    {YELLOW}ESCALATED{RESET} {e['item_id']} ({e['type']}) — {e['reason']}")
+            print(f"    {YELLOW}ESCALATED{RESET} {e['item_id']} ({e['type']}) - {e['reason']}")
 
     print(f"\n  {BOLD}GOVERNANCE:{RESET}")
     if l02["governance"]:
@@ -377,13 +377,13 @@ async def demo_dispatch_work(args, options=None):
 
 
 async def demo_merge_denial(args, options=None):
-    """An agent attempts to merge — and the platform refuses.
+    """An agent attempts a merge and the no-merge policy denies it.
 
     Teaching beat for the dashboard: Governance Events gains a
     'rejected' action and Governance Denials increments. The wrapped
     function never executes: denial happens BEFORE execution.
     """
-    header("Policy denial — an agent tries to merge")
+    header("Policy denial - an agent tries to merge")
     options = options or {}
     obs = options.get("obs_stack")
     governance = Governance(obs_stack=obs)
@@ -419,7 +419,7 @@ async def demo_merge_denial(args, options=None):
             "dispatch_governance_denials", labels={"type": "merge-attempt"}
         )
     print(f"\n  {BOLD}The wrapped merge function never executed.{RESET}")
-    print(f"  {DIM}Denial happens before execution — that is the point of the envelope.{RESET}")
+    print(f"  {DIM}Policies are checked before the wrapped function runs.{RESET}")
 
 
 async def _no_merge_policy_demo(action: dict) -> dict:
@@ -427,13 +427,13 @@ async def _no_merge_policy_demo(action: dict) -> dict:
         return {
             "allowed": False,
             "name": "no-merge-policy",
-            "reason": "Agents cannot merge at Level 2 — human approval required",
+            "reason": "Agents cannot merge at Level 2 - human approval required",
         }
     return {"allowed": True, "name": "no-merge-policy", "reason": "Action permitted"}
 
 
 async def interactive_menu(args, options, runners):
-    """Run paths on demand from one process — the live-dashboard teaching mode.
+    """Run paths on demand from one process - the live-dashboard teaching mode.
 
     All runs share one ObservabilityStack, so every run moves the same
     /metrics counters and the Grafana dashboard updates cumulatively.
@@ -443,11 +443,11 @@ async def interactive_menu(args, options, runners):
         "2": ("/pr-review", runners["pr-review"]),
         "3": ("/iterative-refactor", runners["iterative-refactor"]),
         "4": ("/dispatch-work", runners["dispatch-work"]),
-        "5": ("policy denial — agent tries to merge", demo_merge_denial),
+        "5": ("policy denial - agent tries to merge", demo_merge_denial),
     }
     while True:
         print(
-            f"\n{BOLD}  Interactive demo — pick a run "
+            f"\n{BOLD}  Interactive demo - pick a run "
             f"(dashboard updates within one scrape){RESET}"
         )
         print("    [1] /ci-build              [2] /pr-review")
@@ -464,7 +464,7 @@ async def interactive_menu(args, options, runners):
             name, runner = choices[choice]
             await runner(args, options)
             print(
-                f"\n  {GREEN}{name} recorded — flip to Grafana; "
+                f"\n  {GREEN}{name} recorded - flip to Grafana; "
                 f"panels update on the next scrape.{RESET}"
             )
         elif choice:
@@ -475,7 +475,7 @@ async def interactive_menu(args, options, runners):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="ADP in Action — L0/L1 to L2/L3 Transition Demo",
+        description="ADP in Action - L0/L1 to L2/L3 Transition Demo",
     )
     parser.add_argument(
         "path",
@@ -559,7 +559,7 @@ def main():
     print(f"{BOLD}{CYAN}")
     print("  ╔══════════════════════════════════════════════════════════════╗")
     print("  ║                    ADP in Action                            ║")
-    print("  ║  From IDP to ADP — L0/L1 to L2/L3 Transition Demo          ║")
+    print("  ║  From IDP to ADP - L0/L1 to L2/L3 Transition Demo          ║")
     print("  ╚══════════════════════════════════════════════════════════════╝")
     print(f"{RESET}")
     if args.simulate:
@@ -577,7 +577,7 @@ def main():
     }
 
     async def run():
-        # Shared observability stack — all paths feed metrics into one place
+        # Shared observability stack - all paths feed metrics into one place
         obs = ObservabilityStack(service_name="adp-demo")
         options = {"obs_stack": obs}
 

@@ -1,10 +1,10 @@
 """
-GOVERNANCE — Agent Control Layer
+GOVERNANCE - Agent Control Layer
 
 Three components that control how the agent operates:
-    Identity      — Who or what is acting (agent identity, team scope)
-    Security      — What is allowed (RBAC, policy enforcement)
-    Observability — What happened (telemetry, audit trail)
+    Identity      - Who or what is acting (agent identity, team scope)
+    Security      - What is allowed (RBAC, policy enforcement)
+    Observability - What happened (telemetry, audit trail)
 
 GOVERNANCE is mandatory for all agent-driven paths.
 Every HARNESS execution is wrapped by GOVERNANCE.
@@ -107,7 +107,7 @@ class GovernanceObservability:
     """
     Telemetry and audit trail.
 
-    Every agent action is recorded — approved, rejected, escalated,
+    Every agent action is recorded - approved, rejected, escalated,
     or overridden. The audit trail is immutable within a session.
 
     When an ObservabilityStack is provided, events are also emitted
@@ -187,7 +187,7 @@ class Governance:
     enforcement, and observability recording.
 
     When an ObservabilityStack is provided, GOVERNANCE events are
-    emitted to L01 infrastructure — bridging L03 agent control
+    emitted to L01 infrastructure - bridging L03 agent control
     to L01 traces, metrics, and structured logs.
 
     """

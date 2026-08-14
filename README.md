@@ -17,7 +17,7 @@ Four platform paths, each implemented at two maturity levels:
 | `/iterative-refactor` | Hybrid | Single gate, human fixes | Agent + gate feedback loop with retry limit |
 | `/dispatch-work` | Probabilistic | Human picks from backlog | Platform dispatches work to agents by capability |
 
-The key structural insight: **deterministic paths stay on L01 at every maturity level.** Only probabilistic and hybrid paths activate L02 (path definitions) and L03 (agent infrastructure). Dispatch Work is a *new* path at L2 — it does not exist at L0-L1.
+One structural point matters most: **deterministic paths stay on L01 at every maturity level.** Only probabilistic and hybrid paths activate L02 (path definitions) and L03 (agent infrastructure). Dispatch Work is a *new* path at L2 - it does not exist at L0-L1.
 
 ---
 
@@ -29,9 +29,9 @@ the paper, this is how its concepts land in code:
 | In the paper | In this repo |
 |---|---|
 | Figure-1: three layers (Tooling / Path Definitions / Agent Infrastructure) | `src/layers.py` (L01), `src/paths/` (L02), `src/harness.py` + `src/governance.py` (L03) |
-| Listing 1 — `/ci-build`, deterministic | `src/paths/ci_build.py` (`run_at_l01` / `run_at_l02`) |
-| Listing 2 — `/pr-review`, probabilistic | `src/paths/pr_review.py` |
-| Listing 3 — `/iterative-refactor`, hybrid | `src/paths/iterative_refactor.py` → `src/paths/validate_change.py` |
+| Listing 1 - `/ci-build`, deterministic | `src/paths/ci_build.py` (`run_at_l01` / `run_at_l02`) |
+| Listing 2 - `/pr-review`, probabilistic | `src/paths/pr_review.py` |
+| Listing 3 - `/iterative-refactor`, hybrid | `src/paths/iterative_refactor.py` → `src/paths/validate_change.py` |
 | "What changes at each maturity level" table | every path exposes `run_at_l01()` (maturity L0-L1) and `run_at_l02()` (maturity L2) |
 | Harness (context, capability, execution, evaluation) | `src/harness.py` |
 | Governance (identity, security, observability) | `src/governance.py`, `src/observability.py` |
@@ -68,7 +68,7 @@ L01  Tooling (IDP)           CI pipelines, GitOps, observability (traces,
                              Does not change when agents arrive.
 ```
 
-GOVERNANCE.Observability (L03) bridges to L01 observability infrastructure — agent events emit to the same traces, metrics, and structured logs that pipelines use.
+GOVERNANCE.Observability (L03) bridges to L01 observability infrastructure - agent events emit to the same traces, metrics, and structured logs that pipelines use.
 
 
 ---
@@ -128,7 +128,7 @@ python3 -m pip install -r requirements.txt
 
 ### Simulate mode (default, no API key needed)
 
-Runs all three paths using local heuristics — real Ruff linting, real `ast`-based code analysis, real security scanning. No external API calls.
+Runs all three paths using local heuristics - real Ruff linting, real `ast`-based code analysis, real security scanning. No external API calls.
 
 ```bash
 # Run the full demo (all four paths, L0-L1 then L2)
@@ -156,11 +156,11 @@ python3 -m src.cli --simulate --serve-metrics --interactive
 ### The seeded defect (why the refactor demo loops)
 
 `sample/src/refactor_target.py` ships with intentional, auto-fixable lint
-defects (unused imports, unsorted import block). This is deliberate: it makes
-the `/iterative-refactor` demo genuinely loop. At L0-L1 the gate fails and a
+defects (unused imports, unsorted import block). The defects are seeded so that
+the `/iterative-refactor` demo actually loops. At L0-L1 the gate fails and a
 human would have to fix it manually. At L2, attempt 1 fails the gate, the
 agent applies a fix (Ruff `--fix` in simulate mode, Claude in live mode), and
-attempt 2 passes. Do not clean the file up — its defects are the demo. Restore
+attempt 2 passes. Do not clean the file up; the demo depends on these defects. Restore
 it any time with `git checkout -- sample/`.
 
 ### Live mode (requires Anthropic API key)
@@ -193,7 +193,7 @@ adp-demo --live --model claude-sonnet-4-5
 
 ## How the Anthropic Integration Works
 
-In `--simulate` mode, no API calls are made. The HARNESS execution component uses local heuristics — `ast.parse` to analyze source files, pattern matching to detect issues, Ruff `--fix` for auto-repairs. This is the default and requires no API key.
+In `--simulate` mode, no API calls are made. The HARNESS execution component uses local heuristics - `ast.parse` to analyze source files, pattern matching to detect issues, Ruff `--fix` for auto-repairs. This is the default and requires no API key.
 
 In `--live` mode, the codebase uses the `anthropic` Python SDK to call Claude at two points in the agent-driven paths:
 
@@ -209,7 +209,7 @@ python3 -m src.cli --live --model claude-sonnet-4-5
 
 You can also set `ANTHROPIC_MODEL` as an environment variable. The model selection is handled by the HARNESS Capability component, which can vary the model based on change type (security-sensitive changes may warrant a different strategy).
 
-The GOVERNANCE layer is identical in both modes — identity verification, policy enforcement, and observability recording wrap every agent action regardless of whether the execution is simulated or live.
+The GOVERNANCE layer is identical in both modes - identity verification, policy enforcement, and observability recording wrap every agent action regardless of whether the execution is simulated or live.
 
 ---
 
@@ -217,9 +217,9 @@ The GOVERNANCE layer is identical in both modes — identity verification, polic
 
 The codebase includes a full L01 observability infrastructure (`src/observability.py`) with three pillars:
 
-- **Traces** — OpenTelemetry-compatible spans with parent-child relationships. Each pipeline run is a trace, each stage is a child span. Each dispatch cycle is a trace, each assignment is a span.
-- **Metrics** — Prometheus-compatible counters, gauges, and histograms. Pipeline pass/fail rates, dispatch assignment counts, governance event tallies, cycle duration.
-- **Structured Logs** — JSON event log entries with severity, message, timestamp, and arbitrary context fields.
+- **Traces** - OpenTelemetry-compatible spans with parent-child relationships. Each pipeline run is a trace, each stage is a child span. Each dispatch cycle is a trace, each assignment is a span.
+- **Metrics** - Prometheus-compatible counters, gauges, and histograms. Pipeline pass/fail rates, dispatch assignment counts, governance event tallies, cycle duration.
+- **Structured Logs** - JSON event log entries with severity, message, timestamp, and arbitrary context fields.
 
 GOVERNANCE.Observability (L03) emits to this L01 infrastructure when an ObservabilityStack is provided, bridging agent-level events to the same telemetry fabric that pipelines use.
 
@@ -262,7 +262,7 @@ brew services start grafana
 ```bash
 cd grafana
 docker compose up -d
-# Open http://localhost:3000 (admin/admin) — dashboard auto-provisioned
+# Open http://localhost:3000 (admin/admin) - dashboard auto-provisioned
 ```
 
 The dashboard has three sections mapped to the three-layer architecture: L01 Pipeline Telemetry, L02 Dispatch Work, and L03 GOVERNANCE Events. See `grafana/README.md` for details.
@@ -281,7 +281,7 @@ adp_paths/
 ├── src/
 │   ├── __init__.py
 │   ├── __main__.py             # Package entry point (python3 -m src.cli)
-│   ├── cli.py                  # CLI runner — argparse, ANSI output, asyncio.run()
+│   ├── cli.py                  # CLI runner - argparse, ANSI output, asyncio.run()
 │   ├── tools.py                # L01 deterministic tools (Ruff, test runner, build, security)
 │   ├── layers.py               # Three-layer architecture (L01, L02, L03)
 │   ├── harness.py              # HARNESS: Context, Capability, Execution, Evaluation
@@ -290,22 +290,22 @@ adp_paths/
 │   ├── metrics_server.py       # HTTP metrics server (Prometheus /metrics endpoint)
 │   └── paths/
 │       ├── __init__.py
-│       ├── ci_build.py         # Deterministic — stays on L01
-│       ├── pr_review.py        # Probabilistic — activates L02 + L03 at L2
-│       ├── iterative_refactor.py # Hybrid — wrapper exposing /iterative-refactor
-│       ├── validate_change.py  # Hybrid — agent + gate loop implementation
-│       └── dispatch_work.py    # Dispatch — NEW at L2, assigns work to agents
+│       ├── ci_build.py         # Deterministic - stays on L01
+│       ├── pr_review.py        # Probabilistic - activates L02 + L03 at L2
+│       ├── iterative_refactor.py # Hybrid - wrapper exposing /iterative-refactor
+│       ├── validate_change.py  # Hybrid - agent + gate loop implementation
+│       └── dispatch_work.py    # Dispatch - NEW at L2, assigns work to agents
 ├── sample/
 │   └── src/
 │       ├── __init__.py
 │       ├── handler.py          # Platform API handler (the code pipelines operate on)
 │       ├── utils.py            # Platform utilities (validation, formatting, sanitization)
-│       └── refactor_target.py  # Seeded lint defects — makes /iterative-refactor loop
+│       └── refactor_target.py  # Seeded lint defects - makes /iterative-refactor loop
 ├── docs/
-│   ├── ci-build.mermaid        # Sequence diagram — /ci-build path
-│   ├── pr-review.mermaid       # Sequence diagram — /pr-review path
-│   ├── validate-change.mermaid # Sequence diagram — /iterative-refactor path
-│   └── dispatch-work.mermaid   # Sequence diagram — /dispatch-work path
+│   ├── ci-build.mermaid        # Sequence diagram - /ci-build path
+│   ├── pr-review.mermaid       # Sequence diagram - /pr-review path
+│   ├── validate-change.mermaid # Sequence diagram - /iterative-refactor path
+│   └── dispatch-work.mermaid   # Sequence diagram - /dispatch-work path
 ├── grafana/
 │   ├── docker-compose.yml      # Grafana + Prometheus stack
 │   ├── prometheus.yml          # Prometheus scrape config
@@ -315,27 +315,28 @@ adp_paths/
 │   └── provisioning/           # Auto-provisioned datasources and dashboard config
 └── tests/
     ├── __init__.py
-    ├── test_tools.py           # 14 tests — lint, test runner, build, security scan
-    ├── test_governance.py      # 13 tests — identity, security policies, observability, wrap
-    ├── test_harness.py         # 15 tests — context, capability, execution, evaluation, flow
-    ├── test_observability.py   # 27 tests — spans, tracer, metrics, logger, stack
-    ├── test_metrics_server.py  # 6 tests — HTTP server, /metrics endpoint, lifecycle
-    └── test_paths.py           # 22 tests — ci-build, pr-review, iterative-refactor, dispatch-work
+    ├── test_tools.py           # 14 tests - lint, test runner, build, security scan
+    ├── test_governance.py      # 13 tests - identity, security policies, observability, wrap
+    ├── test_harness.py         # 15 tests - context, capability, execution, evaluation, flow
+    ├── test_observability.py   # 27 tests - spans, tracer, metrics, logger, stack
+    ├── test_metrics_server.py  # 6 tests - HTTP server, /metrics endpoint, lifecycle
+    └── test_paths.py           # 22 tests - ci-build, pr-review, iterative-refactor, dispatch-work
 ```
 
 ---
 
 ## Troubleshooting
 
-**`FAIL lint (ruff)` with a "Ruff not installed" message** — you installed with
+**`FAIL lint (ruff)` with a "Ruff not installed" message** - you installed with
 `python3 -m pip install -e .` (which has no base dependencies). Install the dev extras:
 `python3 -m pip install -e ".[dev]"`. The demo also falls back to `python3 -m ruff` when
 the binary isn't on PATH, so a plain `python3 -m pip install ruff` in the same
 environment works too.
 
-**Lint gate fails with "unparseable output"** — Ruff ran but couldn't be
-parsed (usually a config or version mismatch). The gate fails closed by
-design; the stderr tail is included in the stage output.
+**Lint gate fails with "unparseable output"** - Ruff ran but couldn't be
+parsed (usually a config or version mismatch). The gate treats this as a
+failure rather than passing silently; the stderr tail is included in the
+stage output.
 
 ---
 
@@ -391,23 +392,23 @@ Ruff configuration is in `ruff.toml`. Target version is Python 3.11, line length
 
 ## GOVERNANCE Component Mapping
 
-Every agent-driven path wraps execution with GOVERNANCE. The three sub-layers — Identity, Security, Observability — are implemented in `governance.py` and used by each path as follows:
+Every agent-driven path wraps execution with GOVERNANCE. The three sub-layers - Identity, Security, Observability - are implemented in `governance.py` and used by each path as follows:
 
 | Component | Class | What It Does | Paths That Use It |
 |-----------|-------|-------------|-------------------|
-| Identity | `GovernanceIdentity` | `register()` + `verify()` — agent must be registered before execution | /pr-review, /iterative-refactor, /dispatch-work |
-| Security | `GovernanceSecurity` | `add_policy()` + `enforce()` — policy functions checked before every action | /pr-review (repo-scope, no-merge), /iterative-refactor (retry-limit), /dispatch-work (capability-scope) |
+| Identity | `GovernanceIdentity` | `register()` + `verify()` - agent must be registered before execution | /pr-review, /iterative-refactor, /dispatch-work |
+| Security | `GovernanceSecurity` | `add_policy()` + `enforce()` - policy functions checked before every action | /pr-review (repo-scope, no-merge), /iterative-refactor (retry-limit), /dispatch-work (capability-scope) |
 | Observability | `GovernanceObservability` | `record()` + audit trail + metrics + L01 bridge via ObservabilityStack | /pr-review, /iterative-refactor, /dispatch-work |
 
 `Governance.wrap()` orchestrates the sequence: verify identity → enforce policies → execute → record. If identity verification fails or any policy denies, the wrapped function never runs.
 
-Deterministic paths (`/ci-build`) do not use GOVERNANCE — the pipeline does not know or care who wrote the code.
+Deterministic paths (`/ci-build`) do not use GOVERNANCE; the pipeline runs the same regardless of who wrote the code.
 
 ---
 
 ## HARNESS Component Mapping
 
-Agent-driven paths that require probabilistic reasoning use HARNESS to orchestrate the agent's execution. The four components — Context, Capability, Execution, Evaluation — are implemented in `harness.py`:
+Agent-driven paths that require probabilistic reasoning use HARNESS to orchestrate the agent's execution. The four components - Context, Capability, Execution, Evaluation - are implemented in `harness.py`:
 
 | Component | Class | What It Does | Paths That Use It |
 |-----------|-------|-------------|-------------------|
@@ -420,7 +421,7 @@ Agent-driven paths that require probabilistic reasoning use HARNESS to orchestra
 
 `/dispatch-work` uses HARNESS-like capability matching inline (the `_match_agent` function) rather than the full `Harness.run()` orchestrator, because dispatch is about routing work, not generating content.
 
-Deterministic paths (`/ci-build`) do not use HARNESS — there is no probabilistic reasoning involved.
+Deterministic paths (`/ci-build`) do not use HARNESS - there is no probabilistic reasoning involved.
 
 ---
 
@@ -437,7 +438,7 @@ As cited in the *ADP in Action* paper:
 
 ## Author
 
-**Ajay Chankramath** — ajay@platformengineering.org
+**Ajay Chankramath** - ajay@platformengineering.org
 
 CTO, Platform Engineering Advisory | PlatformEngineering.org
 

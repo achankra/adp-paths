@@ -1,5 +1,5 @@
 """
-/validate-change — Hybrid Path (at L2)
+/validate-change - Hybrid Path (at L2)
 
 At L0-L1: Single human-walked gate. Developer reads CI output,
           fixes manually, pushes again. No feedback loop.
@@ -138,15 +138,15 @@ async def run_at_l01(change: dict) -> dict:
         "governance": None,
         "summary": {
             "l01": "Validation gate executed (lint → build → security)",
-            "l02": "None — single gate, no feedback loop",
-            "l03": "None — no agent infrastructure",
+            "l02": "None - single gate, no feedback loop",
+            "l03": "None - no agent infrastructure",
         },
     }
 
 
 async def run_at_l02(change: dict, options: dict | None = None) -> dict:
     """
-    Run /validate-change at L2 (hybrid — agent + gate feedback loop).
+    Run /validate-change at L2 (hybrid - agent + gate feedback loop).
 
     The agent interprets failure signals, generates fixes, and resubmits
     to the deterministic pipeline. The loop continues until the gate
@@ -298,7 +298,7 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
         },
         "summary": {
             "l01": "Deterministic gate executed on each attempt (real Ruff, real security scan)",
-            "l02": "Path defined as hybrid — agent + gate feedback loop",
+            "l02": "Path defined as hybrid - agent + gate feedback loop",
             "l03": (
                 f"HARNESS generated {sum(1 for e in loop_trace if e.get('fix'))} fix(es). "
                 f"GOVERNANCE tracked {final_result['attempts']} attempt(s). "
@@ -311,7 +311,7 @@ async def run_at_l02(change: dict, options: dict | None = None) -> dict:
 async def _generate_fix(harness, target_files, lint_errors, failed_stages, simulate):
     """Generate a fix using either Ruff --fix (simulate) or Claude (live)."""
     if simulate:
-        # Use Ruff --fix directly — deterministic auto-fix
+        # Use Ruff --fix directly - deterministic auto-fix
         fix_result = tools.lint(target_files, fix=True)
         return {
             "harness": True,

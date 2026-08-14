@@ -1,5 +1,5 @@
 # Ruff configuration for the sample code that the deterministic pipeline lints.
-# These rules are intentionally strict — they represent the platform's golden path.
+# These rules are intentionally strict - they represent the platform's golden path.
 
 target-version = "py311"
 line-length = 100

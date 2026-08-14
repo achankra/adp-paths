@@ -1,5 +1,5 @@
 ---
-title: "/dispatch-work — Dispatch Path (L2 only)"
+title: "/dispatch-work - Dispatch Path (L2 only)"
 ---
 sequenceDiagram
     autonumber
@@ -10,11 +10,11 @@ sequenceDiagram
     participant GOV as L03 GOVERNANCE
     participant Obs as ObservabilityStack
 
-    Note over Trigger,Obs: L0-L1 — No dispatch path. Humans pick up work from a board.
+    Note over Trigger,Obs: L0-L1 - No dispatch path. Humans pick up work from a board.
     Trigger->>Q: Work items arrive (PR opened, commit pushed, alert fired)
     Q-->>Trigger: Items sit in backlog. Human picks from board.
 
-    Note over Trigger,Obs: L2 — Agent dispatch with capability matching
+    Note over Trigger,Obs: L2 - Agent dispatch with capability matching
 
     Trigger->>Disp: work_items[]
     activate Disp
@@ -23,14 +23,14 @@ sequenceDiagram
     Disp->>Obs: logger.info("Dispatch cycle started")
 
     rect rgb(230, 245, 230)
-        Note right of Q: L01 — Load work queue (infrastructure)
+        Note right of Q: L01 - Load work queue (infrastructure)
         Disp->>Q: enqueue(WorkItem) for each item
         Q-->>Disp: Items queued by priority (critical > high > medium > low)
         Disp->>Obs: metrics.gauge("dispatch_queue_size", count)
     end
 
     rect rgb(240, 240, 255)
-        Note right of GOV: L03 — Register agents in GOVERNANCE
+        Note right of GOV: L03 - Register agents in GOVERNANCE
         Disp->>GOV: identity.register("review-agent-001", {capabilities: [review]})
         Disp->>GOV: identity.register("validate-agent-001", {capabilities: [validate]})
         Disp->>GOV: identity.register("build-agent-001", {capabilities: [build]})
@@ -85,9 +85,9 @@ sequenceDiagram
 %% Flow (L0-L1):
 %% (1) Work items arrive from external triggers (PR opened, commit pushed, alert fired).
 %% (2) Items sit in the L01 WorkQueue, ordered by priority.
-%% (3) A human picks work from a board or backlog. There is no dispatch path — no assignment logic.
+%% (3) A human picks work from a board or backlog. There is no dispatch path - no assignment logic.
 %%
-%% Flow (L2 — agent dispatch):
+%% Flow (L2 - agent dispatch):
 %% (1) Platform events arrive as a batch of work items.
 %% (2) The dispatcher opens a root trace span ("dispatch-cycle") and logs the start.
 %% (3) L01 infrastructure: each work item is enqueued into the WorkQueue by priority
