@@ -12,7 +12,7 @@ scrape_configs:
     static_configs:
       # Docker: use host.docker.internal to reach the host machine
       # Homebrew/local: use localhost directly
-      - targets: ["localhost:8080"]
+      - targets: ["127.0.0.1:8080"]  # IPv4 explicitly — the demo metrics server binds 127.0.0.1
         labels:
           service: "adp-paths"
           environment: "demo"

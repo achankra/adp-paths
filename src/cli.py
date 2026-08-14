@@ -28,6 +28,7 @@ import os
 import sys
 from pathlib import Path
 
+from src.governance import Governance
 from src.metrics_server import MetricsServer
 from src.observability import ObservabilityStack
 from src.paths import ci_build, dispatch_work, iterative_refactor, pr_review
@@ -375,6 +376,101 @@ async def demo_dispatch_work(args, options=None):
     print_summary(l02["summary"])
 
 
+async def demo_merge_denial(args, options=None):
+    """An agent attempts to merge — and the platform refuses.
+
+    Teaching beat for the dashboard: Governance Events gains a
+    'rejected' action and Governance Denials increments. The wrapped
+    function never executes: denial happens BEFORE execution.
+    """
+    header("Policy denial — an agent tries to merge")
+    options = options or {}
+    obs = options.get("obs_stack")
+    governance = Governance(obs_stack=obs)
+
+    governance.identity.register("pr-review-agent-001", {
+        "team": "platform",
+        "permissions": ["read", "comment"],  # no merge permission
+    })
+    governance.security.add_policy({
+        "name": "no-merge-policy",
+        "check": _no_merge_policy_demo,
+    })
+
+    async def _would_merge():
+        # If governance ever lets this run, the demo is broken.
+        return {"action": "merged"}
+
+    result = await governance.wrap(
+        "pr-review-agent-001",
+        {"path": "/pr-review", "action": "merge"},
+        _would_merge,
+    )
+
+    label("Attempted action", "merge (by pr-review-agent-001)")
+    label("Allowed", str(result["allowed"]))
+    label("Reason", result.get("reason", "-"))
+    policies = result.get("security", {}).get("results", [])
+    for pol in policies:
+        if not pol.get("allowed", True):
+            print(f"    {RED}DENIED{RESET} by {pol.get('policy')}: {pol.get('reason')}")
+    if obs and not result["allowed"]:
+        obs.metrics.counter(
+            "dispatch_governance_denials", labels={"type": "merge-attempt"}
+        )
+    print(f"\n  {BOLD}The wrapped merge function never executed.{RESET}")
+    print(f"  {DIM}Denial happens before execution — that is the point of the envelope.{RESET}")
+
+
+async def _no_merge_policy_demo(action: dict) -> dict:
+    if action.get("action") == "merge":
+        return {
+            "allowed": False,
+            "name": "no-merge-policy",
+            "reason": "Agents cannot merge at Level 2 — human approval required",
+        }
+    return {"allowed": True, "name": "no-merge-policy", "reason": "Action permitted"}
+
+
+async def interactive_menu(args, options, runners):
+    """Run paths on demand from one process — the live-dashboard teaching mode.
+
+    All runs share one ObservabilityStack, so every run moves the same
+    /metrics counters and the Grafana dashboard updates cumulatively.
+    """
+    choices = {
+        "1": ("/ci-build", runners["ci-build"]),
+        "2": ("/pr-review", runners["pr-review"]),
+        "3": ("/iterative-refactor", runners["iterative-refactor"]),
+        "4": ("/dispatch-work", runners["dispatch-work"]),
+        "5": ("policy denial — agent tries to merge", demo_merge_denial),
+    }
+    while True:
+        print(
+            f"\n{BOLD}  Interactive demo — pick a run "
+            f"(dashboard updates within one scrape){RESET}"
+        )
+        print("    [1] /ci-build              [2] /pr-review")
+        print("    [3] /iterative-refactor    [4] /dispatch-work")
+        print("    [5] policy denial (agent tries to merge)")
+        print("    [q] quit")
+        try:
+            choice = input("  > ").strip().lower()
+        except EOFError:
+            break
+        if choice == "q":
+            break
+        if choice in choices:
+            name, runner = choices[choice]
+            await runner(args, options)
+            print(
+                f"\n  {GREEN}{name} recorded — flip to Grafana; "
+                f"panels update on the next scrape.{RESET}"
+            )
+        elif choice:
+            print(f"  {DIM}Unknown choice: {choice}{RESET}")
+
+
 # ── Main ─────────────────────────────────────────────────────────
 
 def main():
@@ -393,6 +489,11 @@ def main():
         choices=["ci-build", "pr-review", "iterative-refactor", "dispatch-work"],
         default=None,
         help="Alias for the positional path argument",
+    )
+    parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Menu mode: run paths on demand in ONE process (pairs with --serve-metrics)",
     )
     parser.add_argument(
         "--step",
@@ -484,11 +585,22 @@ def main():
         metrics_server = None
         if args.serve_metrics:
             metrics_server = MetricsServer(obs, port=args.metrics_port, host=args.metrics_host)
-            metrics_server.start()
+            try:
+                metrics_server.start()
+            except OSError as e:
+                print(
+                    f"{RED}Error: cannot bind "
+                    f"{args.metrics_host}:{args.metrics_port} ({e.strerror}).{RESET}"
+                )
+                print("  A previous run is probably still serving metrics in another tab.")
+                print("  Stop it with Ctrl+C there, or pass a different --metrics-port.")
+                sys.exit(1)
             print(f"  {GREEN}{BOLD}Metrics server started: {metrics_server.url}{RESET}")
             print(f"  {DIM}Prometheus can scrape this endpoint while the demo runs.{RESET}\n")
 
-        if args.path:
+        if args.interactive:
+            await interactive_menu(args, options, runners)
+        elif args.path:
             await runners[args.path](args, options)
         else:
             for runner in runners.values():

@@ -145,6 +145,12 @@ python3 -m src.cli --simulate --path iterative-refactor
 
 # Demo pacing: pause for Enter between output sections instead of scrolling past
 python3 -m src.cli --simulate --step iterative-refactor
+
+# Interactive session: run paths on demand from a menu, all in ONE process.
+# Pair with --serve-metrics and the Grafana stack: every run moves the same
+# live dashboard, including a policy-denial demo ([5]) that increments
+# Governance Denials on the board.
+python3 -m src.cli --simulate --serve-metrics --interactive
 ```
 
 ### The seeded defect (why the refactor demo loops)
